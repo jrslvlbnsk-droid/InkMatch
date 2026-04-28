@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InkMatch — Najdi svého tatéra</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ████████████████████ LANDING ████████████████████ -->
+<div class="screen active" id="s-landing">
+  <nav>
+    <div class="logo" onclick="go('s-landing')">Ink<span>Match</span></div>
+    <div class="nav-center">
+      <button class="nav-link" onclick="go('s-landing')">Úvod</button>
+      <button class="nav-link" onclick="openModal('client')">Pro klienty</button>
+      <button class="nav-link" onclick="openModal('artist')">Pro tatéry</button>
+    </div>
+    <div class="nav-right">
+      <button class="btn-sm btn-outline" onclick="openModal('login')">Přihlásit</button>
+      <button class="btn-sm btn-gold"    onclick="openModal('client')">Začít zdarma</button>
+      <button class="btn-demo"           onclick="demoLogin('client')">👁 Demo klient</button>
+      <button class="btn-demo"           onclick="demoLogin('artist')">👁 Demo tatér</button>
+    </div>
+  </nav>
+
+  <div class="hero fade-in">
+    <div class="hero-glow"></div>
+    <div class="hero-line"></div>
+    <div class="hero-tag">AI Tattoo Matching Platform</div>
+    <h1>Najdi tatéra,</h1>
+    <div class="hero-sub"><em>který mluví tvým stylem</em></div>
+    <p>Popiš své vysněné tetování. Naše AI to porovná s portfolii stovek tatérů a najde ten pravý match — během sekund.</p>
+    <div class="hero-btns">
+      <button class="btn-hero gold"  onclick="openModal('client')">Hledám tatéra</button>
+      <button class="btn-hero ghost" onclick="openModal('artist')">Jsem tatér →</button>
+    </div>
+    <div class="hero-stats">
+      <div class="h-stat"><span class="h-stat-num">247</span><span class="h-stat-lbl">Tatérů</span></div>
+      <div class="h-stat"><span class="h-stat-num">1 840</span><span class="h-stat-lbl">Realizací</span></div>
+      <div class="h-stat"><span class="h-stat-num">4.9★</span><span class="h-stat-lbl">Hodnocení</span></div>
+      <div class="h-stat"><span class="h-stat-num">12</span><span class="h-stat-lbl">Stylů</span></div>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">✦</div>
+        <h3>AI Matching</h3>
+        <p>Popište tetování přirozeným jazykem. Claude AI analyzuje váš popis a porovná ho s portfolii tatérů — výsledky seřazené podle shody stylu.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">◷</div>
+        <h3>Rezervace v jednom kroku</h3>
+        <p>Vyberte tatéra, datum a čas. Rezervace se okamžitě zapíše do kalendáře tatéra i do vašeho Google Kalendáře.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">◈</div>
+        <h3>Ověřená hodnocení</h3>
+        <p>Pouze klienti po realizaci mohou zanechat recenzi. Žádné falešné hodnocení — jen skutečná zkušenost.</p>
+      </div>
+    </div>
+  </div>
+</div><!-- /s-landing -->
+
+
+<!-- ████████████████████ ARTIST DASHBOARD ████████████████████ -->
+<div class="screen" id="s-artist">
+  <nav>
+    <div class="logo" onclick="go('s-landing')">Ink<span>Match</span></div>
+    <div class="nav-right">
+      <span style="font-size:13px;color:var(--muted)" id="nav-artist-name">—</span>
+      <div class="avatar-nav">🎨</div>
+      <button class="btn-sm btn-outline" onclick="logout()">Odhlásit</button>
+    </div>
+  </nav>
+
+  <div class="dash-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-section">Hlavní</div>
+      <button class="sb-btn on" onclick="switchTab(this,'t-overview')">
+        <span class="sb-icon">◈</span>Přehled
+      </button>
+      <button class="sb-btn" onclick="switchTab(this,'t-portfolio')">
+        <span class="sb-icon">◫</span>Portfolio
+      </button>
+      <button class="sb-btn" onclick="switchTab(this,'t-reviews')">
+        <span class="sb-icon">✦</span>Hodnocení
+      </button>
+      <div class="sb-section">Rezervace</div>
+      <button class="sb-btn" onclick="switchTab(this,'t-bookings')">
+        <span class="sb-icon">◷</span>Rezervace
+        <span class="sb-badge">2</span>
+      </button>
+      <div class="sb-section">Nastavení</div>
+      <button class="sb-btn" onclick="switchTab(this,'t-profile')">
+        <span class="sb-icon">◉</span>Profil
+      </button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+      <!-- TAB: OVERVIEW -->
+      <div class="tab-content on" id="t-overview">
+        <div class="page-h" id="dash-greeting">Dobrý den ✦</div>
+        <div class="page-p">Přehled za tento měsíc</div>
+        <div class="stat-row">
+          <div class="sc">
+            <div class="sc-label">Poptávky</div>
+            <div class="sc-val g">12</div>
+            <div class="sc-sub">↑ 4 tento týden</div>
+          </div>
+          <div class="sc">
+            <div class="sc-label">Rezervace</div>
+            <div class="sc-val">8</div>
+            <div class="sc-sub" style="color:var(--gold)">2 nové</div>
+          </div>
+          <div class="sc">
+            <div class="sc-label">Hodnocení</div>
+            <div class="sc-val g">4.9★</div>
+            <div class="sc-sub">23 recenzí</div>
+          </div>
+          <div class="sc">
+            <div class="sc-label">Earnings</div>
+            <div class="sc-val">42k</div>
+            <div class="sc-sub">Kč tento měsíc</div>
+          </div>
+        </div>
+        <div class="section-h"><span class="section-title">Nejbližší rezervace</span></div>
+        <div class="booking-list">
+          <div class="booking-item">
+            <div class="bi-dot confirmed"></div>
+            <div class="bi-info">
+              <div class="bi-name">Tereza K. — Watercolor motýl</div>
+              <div class="bi-detail">Zítra · Studio Praha 2</div>
+              <div class="bi-cal">✓ Přidáno do Google Kalendáře</div>
+            </div>
+            <div class="bi-time">10:00</div>
+          </div>
+          <div class="booking-item">
+            <div class="bi-dot pending"></div>
+            <div class="bi-info">
+              <div class="bi-name">Marek P. — Botanické tetování</div>
+              <div class="bi-detail">Pátek · Studio Praha 2</div>
+              <div class="bi-cal" style="color:var(--gold)">◷ Čeká na potvrzení</div>
+            </div>
+            <div class="bi-time">14:00</div>
+          </div>
+        </div>
+      </div><!-- /t-overview -->
+
+      <!-- TAB: PORTFOLIO -->
+      <div class="tab-content" id="t-portfolio">
+        <div class="page-h">Portfolio</div>
+        <div class="page-p">Ukázky vaší práce a styly které nabízíte</div>
+        <div class="portfolio-grid">
+          <div class="port-item c1">
+            <div class="port-inner"><span class="port-emoji">🌸</span><span class="port-style">Watercolor</span></div>
+            <div class="port-badge">Watercolor</div>
+          </div>
+          <div class="port-item c2">
+            <div class="port-inner"><span class="port-emoji">🐉</span><span class="port-style">Blackwork</span></div>
+            <div class="port-badge">Blackwork</div>
+          </div>
+          <div class="port-item c3">
+            <div class="port-inner"><span class="port-emoji">🌿</span><span class="port-style">Fine Line</span></div>
+            <div class="port-badge">Fine Line</div>
+          </div>
+          <div class="port-item c4">
+            <div class="port-inner"><span class="port-emoji">⚡</span><span class="port-style">Geometric</span></div>
+            <div class="port-badge">Geometric</div>
+          </div>
+          <div class="port-item c5">
+            <div class="port-inner"><span class="port-emoji">🦁</span><span class="port-style">Realism</span></div>
+            <div class="port-badge">Realism</div>
+          </div>
+          <div class="port-item c1">
+            <div class="port-inner"><span class="port-emoji">🌙</span><span class="port-style">Dotwork</span></div>
+            <div class="port-badge">Dotwork</div>
+          </div>
+          <div class="port-item c2">
+            <div class="port-inner"><span class="port-emoji">🗡️</span><span class="port-style">Traditional</span></div>
+            <div class="port-badge">Traditional</div>
+          </div>
+          <div class="port-item port-add" onclick="toast('📸 Upload — plná verze')">
+            <div class="port-inner">
+              <span class="port-emoji" style="font-size:24px;color:var(--muted)">＋</span>
+              <span class="port-style">Přidat foto</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-title" style="margin-bottom:14px">Styly které tatérujete</div>
+        <div class="chips">
+          <button class="chip on" onclick="this.classList.toggle('on')">Watercolor</button>
+          <button class="chip on" onclick="this.classList.toggle('on')">Fine Line</button>
+          <button class="chip on" onclick="this.classList.toggle('on')">Blackwork</button>
+          <button class="chip on" onclick="this.classList.toggle('on')">Geometric</button>
+          <button class="chip"    onclick="this.classList.toggle('on')">Traditional</button>
+          <button class="chip"    onclick="this.classList.toggle('on')">Neo-traditional</button>
+          <button class="chip"    onclick="this.classList.toggle('on')">Realism</button>
+          <button class="chip"    onclick="this.classList.toggle('on')">Dotwork</button>
+          <button class="chip"    onclick="this.classList.toggle('on')">Tribal</button>
+          <button class="chip"    onclick="this.classList.toggle('on')">Japanese</button>
+        </div>
+        <button class="btn-sm btn-gold" onclick="toast('✓ Styly uloženy')">Uložit změny</button>
+      </div><!-- /t-portfolio -->
+
+      <!-- TAB: REVIEWS -->
+      <div class="tab-content" id="t-reviews">
+        <div class="page-h">Hodnocení</div>
+        <div class="page-p">23 recenzí · průměr 4.9 ★</div>
+        <div class="review-list">
+          <div class="review-card">
+            <div class="r-av">🌺</div>
+            <div>
+              <div class="r-name">Tereza M.</div>
+              <div class="r-stars">★★★★★</div>
+              <div class="r-text">Naprosto perfektní práce! Watercolor motýl přesně jak jsem si představovala. Karolína mi pomohla s umístěním a velikostí, byla velmi profesionální.</div>
+              <div class="r-date">Před 3 dny</div>
+            </div>
+          </div>
+          <div class="review-card">
+            <div class="r-av">🔥</div>
+            <div>
+              <div class="r-name">Jakub R.</div>
+              <div class="r-stars">★★★★★</div>
+              <div class="r-text">Fine line geometric — lepší než na instagramu. Přesnost a detaily jsou neuvěřitelné. Určitě se vrátím na další kus.</div>
+              <div class="r-date">Před týdnem</div>
+            </div>
+          </div>
+          <div class="review-card">
+            <div class="r-av">🌙</div>
+            <div>
+              <div class="r-name">Eliška V.</div>
+              <div class="r-stars">★★★★☆</div>
+              <div class="r-text">Skvělá zkušenost, studio je příjemné. Pár drobností bych možná udělala jinak, ale celkově velmi spokojená.</div>
+              <div class="r-date">Před 2 týdny</div>
+            </div>
+          </div>
+          <div class="review-card">
+            <div class="r-av">🦋</div>
+            <div>
+              <div class="r-name">Markéta H.</div>
+              <div class="r-stars">★★★★★</div>
+              <div class="r-text">Přišla jsem bez konkrétní představy a Karolína navrhla něco, co překonalo moje očekávání. Jemné linie, nádherná kompozice.</div>
+              <div class="r-date">Před měsícem</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /t-reviews -->
+
+      <!-- TAB: BOOKINGS -->
+      <div class="tab-content" id="t-bookings">
+        <div class="page-h">Rezervace</div>
+        <div class="page-p">Správa vašeho kalendáře a poptávek</div>
+        <div class="booking-list">
+          <div class="booking-item">
+            <div class="bi-dot confirmed"></div>
+            <div class="bi-info">
+              <div class="bi-name">Tereza K. — Watercolor motýl</div>
+              <div class="bi-detail">Zítra 10:00–12:00 · Studio Praha 2</div>
+              <div class="bi-cal">✓ Přidáno do Google Kalendáře</div>
+            </div>
+            <button class="btn-sm btn-outline" style="font-size:11px" onclick="toast('✓ Potvrzeno')">Potvrzeno</button>
+          </div>
+          <div class="booking-item">
+            <div class="bi-dot pending"></div>
+            <div class="bi-info">
+              <div class="bi-name">Marek P. — Botanické tetování</div>
+              <div class="bi-detail">Pátek 14:00–17:00 · Studio Praha 2</div>
+              <div class="bi-cal" style="color:var(--gold)">◷ Čeká na potvrzení</div>
+            </div>
+            <button class="btn-sm btn-gold" style="font-size:11px"
+              onclick="toast('✓ Rezervace potvrzena, Marek byl informován')">Potvrdit</button>
+          </div>
+        </div>
+      </div><!-- /t-bookings -->
+
+      <!-- TAB: PROFILE -->
+      <div class="tab-content" id="t-profile">
+        <div class="page-h">Profil</div>
+        <div class="page-p">Jak vás vidí klienti na InkMatch</div>
+        <div class="profile-box">
+          <div class="profile-header">
+            <div class="prof-av" onclick="toast('Upload fotky — plná verze')">🎨</div>
+            <div>
+              <div class="prof-name" id="prof-display-name">—</div>
+              <div class="prof-sub"  id="prof-display-city">—</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Jméno</label>
+              <input type="text" id="prof-name" placeholder="Vaše jméno">
+            </div>
+            <div class="field">
+              <label>Studio / město</label>
+              <input type="text" id="prof-city" placeholder="Praha 2 · Studio X">
+            </div>
+          </div>
+          <div class="field">
+            <label>Bio</label>
+            <textarea id="prof-bio" placeholder="Napište něco o sobě a svém přístupu..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Hodinová sazba (Kč)</label>
+              <input type="number" id="prof-rate" placeholder="1500">
+            </div>
+            <div class="field">
+              <label>Minimum (Kč)</label>
+              <input type="number" id="prof-min" placeholder="2000">
+            </div>
+          </div>
+          <button class="btn-sm btn-gold" onclick="saveProfile()">Uložit profil</button>
+        </div>
+      </div><!-- /t-profile -->
+
+    </div><!-- /main -->
+  </div><!-- /dash-layout -->
+</div><!-- /s-artist -->
+
+
+<!-- ████████████████████ CLIENT SEARCH ████████████████████ -->
+<div class="screen" id="s-client">
+  <nav>
+    <div class="logo" onclick="go('s-landing')">Ink<span>Match</span></div>
+    <div class="nav-right">
+      <span style="font-size:13px;color:var(--muted)" id="nav-client-name">—</span>
+      <div class="avatar-nav" id="nav-client-av">👤</div>
+      <button class="btn-sm btn-outline" onclick="logout()">Odhlásit</button>
+    </div>
+  </nav>
+
+  <div class="search-wrapper fade-in">
+    <div class="search-top">
+      <h2>Popiš své vysněné tetování</h2>
+      <p>AI analyzuje váš popis a najde nejlepší tatéry pro váš styl</p>
+    </div>
+
+    <div style="max-width:660px;margin:0 auto 32px;padding:0 20px;">
+      <div class="search-box">
+        <div class="ai-badge"><span class="ai-dot"></span> Claude AI aktivní</div>
+        <textarea id="tattoo-desc"
+          placeholder="Např: Chci jemné botanické tetování s rozkvetlými větvemi třešně na předloktí. Minimalistické, jen černá linka, bez stínování. Celkem asi 15 cm...">
+        </textarea>
+        <div class="search-row">
+          <select class="search-select" id="style-sel">
+            <option value="">Jakýkoliv styl</option>
+            <option>Fine Line</option>
+            <option>Watercolor</option>
+            <option>Blackwork</option>
+            <option>Geometric</option>
+            <option>Traditional</option>
+            <option>Realism</option>
+            <option>Dotwork</option>
+            <option>Japanese</option>
+            <option>Neo-traditional</option>
+            <option>Tribal</option>
+          </select>
+          <select class="search-select" id="city-sel">
+            <option value="">Celá ČR</option>
+            <option>Praha</option>
+            <option>Brno</option>
+            <option>Ostrava</option>
+            <option>Plzeň</option>
+          </select>
+          <button class="btn-search" onclick="runSearch()">✦ Hledat</button>
+        </div>
+        <div class="ai-resp" id="ai-resp"></div>
+      </div>
+    </div>
+
+    <div class="ai-loading" id="ai-loading">
+      <div class="loader-ring"></div>
+      <div class="loader-text">AI analyzuje vaši poptávku…</div>
+      <div class="loader-sub">Porovnávám s 247 portfolii tatérů</div>
+    </div>
+
+    <div class="results-area" id="results-area">
+      <div class="results-header">
+        <div>
+          <div class="rh-title">Nalezené shody</div>
+          <div class="rh-sub" id="results-sub">Seřazeno podle AI skóre shody</div>
+        </div>
+        <button class="btn-sm btn-outline" onclick="resetSearch()">← Nové hledání</button>
+      </div>
+      <div class="ai-summary" id="ai-summary"></div>
+      <div class="artist-grid" id="artist-grid"></div>
+    </div>
+  </div>
+</div><!-- /s-client -->
+
+
+<!-- ████████████████████ BOOKING ████████████████████ -->
+<div class="screen" id="s-booking">
+  <nav>
+    <div class="logo">Ink<span>Match</span></div>
+    <div class="nav-right">
+      <button class="btn-sm btn-outline" onclick="go('s-client')">← Zpět</button>
+    </div>
+  </nav>
+
+  <div class="booking-wrap fade-in">
+    <div class="bk-artist">
+      <div class="bk-av" id="bk-av">🌸</div>
+      <div>
+        <div class="bk-name" id="bk-name">—</div>
+        <div class="bk-sub"  id="bk-sub">—</div>
+      </div>
+    </div>
+
+    <span class="section-lbl">Vyberte datum</span>
+    <div class="cal-wrap">
+      <div class="cal-month">
+        <button class="cal-nav">‹</button>
+        <div class="cal-month-name">Květen 2025</div>
+        <button class="cal-nav">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <div id="time-section" style="display:none">
+      <span class="section-lbl">Dostupné časy</span>
+      <div class="time-grid" id="time-grid"></div>
+    </div>
+
+    <div class="summary-box" id="summary-box">
+      <div class="sum-title">Souhrn rezervace</div>
+      <div class="sum-row"><span class="k">Tatér</span><span class="v" id="sum-artist">—</span></div>
+      <div class="sum-row"><span class="k">Datum</span><span class="v" id="sum-date">—</span></div>
+      <div class="sum-row"><span class="k">Čas</span><span class="v"   id="sum-time">—</span></div>
+      <div class="sum-row"><span class="k">Místo</span><span class="v" id="sum-loc">—</span></div>
+      <div class="sum-note">Po potvrzení bude rezervace přidána do vašeho Google Kalendáře a tatér obdrží notifikaci.</div>
+      <button class="btn-full" onclick="confirmBooking()">✓ Potvrdit rezervaci &amp; přidat do kalendáře</button>
+    </div>
+  </div>
+</div><!-- /s-booking -->
+
+
+<!-- ████████████████████ SUCCESS ████████████████████ -->
+<div class="screen" id="s-success">
+  <nav><div class="logo">Ink<span>Match</span></div></nav>
+  <div class="success-wrap fade-in">
+    <div class="success-icon">✦</div>
+    <h2>Rezervace potvrzena!</h2>
+    <p>Vaše rezervace byla úspěšně vytvořena. Tatér byl upozorněn a termín byl přidán do vašeho kalendáře.</p>
+    <div class="notice-box notice-green">📅 Přidáno do Google Kalendáře</div>
+    <div class="notice-box notice-gold">📬 Zpráva od tatéra dorazí do 24 hodin</div>
+    <br>
+    <button class="btn-hero gold" onclick="go('s-client')">Hledat další tatéry</button>
+  </div>
+</div><!-- /s-success -->
+
+
+<!-- ████████████████████ MODAL ████████████████████ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal()">×</button>
+
+    <h2 id="modal-title">Vítejte v InkMatch</h2>
+    <div class="modal-sub" id="modal-sub">Vytvořte si účet zdarma</div>
+    <div class="error-msg" id="err-msg">Vyplňte prosím všechna pole.</div>
+
+    <div class="role-toggle" id="role-toggle">
+      <button class="role-btn on" id="rb-client" onclick="setRole('client')">🎯 Jsem klient</button>
+      <button class="role-btn"    id="rb-artist" onclick="setRole('artist')">🎨 Jsem tatér</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register-fields">
+      <div class="form-row">
+        <div class="field"><label>Jméno</label>    <input type="text"     id="r-name"    placeholder="Jana"></div>
+        <div class="field"><label>Příjmení</label> <input type="text"     id="r-surname" placeholder="Nováková"></div>
+      </div>
+      <div class="field"><label>Email</label>  <input type="email"    id="r-email" placeholder="jana@email.cz"></div>
+      <div class="field"><label>Heslo</label>  <input type="password" id="r-pass"  placeholder="••••••••"></div>
+      <div class="field"><label>Město</label>  <input type="text"     id="r-city"  placeholder="Praha"></div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-fields" style="display:none">
+      <div class="field"><label>Email</label> <input type="email"    id="l-email" placeholder="jana@email.cz"></div>
+      <div class="field"><label>Heslo</label> <input type="password" id="l-pass"  placeholder="••••••••"></div>
+    </div>
+
+    <button class="btn-full" id="modal-btn" onclick="doAuth()">Zaregistrovat se</button>
+    <div class="modal-footer" id="modal-footer">
+      Máte účet? <a onclick="switchToLogin()">Přihlásit se</a>
+    </div>
+  </div>
+</div><!-- /overlay -->
+
+
+<!-- TOAST -->
+<div class="toast" id="toast-el"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,6 +1,50 @@
-'use client'
 import Link from 'next/link'
-export default function Home() {
+import { createClient } from '@supabase/supabase-js'
+
+async function getStats() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const [
+    { count: artistCount },
+    { count: bookingCount },
+    { data: reviews },
+    { data: artistProfiles },
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'artist'),
+    supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'confirmed'),
+    supabase.from('reviews').select('rating'),
+    supabase.from('profiles').select('styles').eq('role', 'artist'),
+  ])
+
+  const avgRating =
+    reviews?.length
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      : 0
+
+  const uniqueStyles = new Set(
+    (artistProfiles ?? []).flatMap((a) => a.styles ?? [])
+  ).size
+
+  return {
+    artists: artistCount ?? 0,
+    bookings: bookingCount ?? 0,
+    rating: avgRating,
+    styles: uniqueStyles,
+  }
+}
+
+export default async function Home() {
+  const stats = await getStats()
+
   return (
     <main className="min-h-screen flex flex-col">
       <nav className="flex justify-between items-center px-10 py-5 border-b border-white/5 sticky top-0 z-50 bg-ink/90 backdrop-blur-xl">
@@ -20,7 +64,12 @@ export default function Home() {
           <Link href="/auth/register?role=artist" className="btn-outline px-8 py-3 text-sm">Jsem tater</Link>
         </div>
         <div className="flex gap-12 border-t border-white/5 pt-10">
-          {[['247','Tateru'],['1 840','Realizaci'],['4.9','Hodnoceni'],['12','Stylu']].map(([n,l]) => (
+          {[
+            [stats.artists.toString(), 'Tateru'],
+            [stats.bookings.toLocaleString('cs-CZ'), 'Realizaci'],
+            [stats.rating ? stats.rating.toFixed(1) : '—', 'Hodnoceni'],
+            [stats.styles.toString(), 'Stylu'],
+          ].map(([n, l]) => (
             <div key={l} className="text-center">
               <span style={{fontFamily:'Georgia,serif'}} className="text-4xl font-semibold text-gold block">{n}</span>
               <span className="text-xs tracking-[2px] uppercase text-white/40">{l}</span>

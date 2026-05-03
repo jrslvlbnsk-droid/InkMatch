@@ -2,14 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import type { EmailOtpType } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-
-  if (!code) {
-    return NextResponse.redirect(`${origin}/auth/login`)
-  }
+  const tokenHash = searchParams.get('token_hash')
+  const type = searchParams.get('type') as EmailOtpType | null
 
   const cookieStore = cookies()
   const supabase = createServerClient(
@@ -26,24 +25,32 @@ export async function GET(request: NextRequest) {
     }
   )
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+  let user = null
 
-  if (error || !data.user) {
-    return NextResponse.redirect(`${origin}/auth/login`)
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) user = data.user
+  } else if (tokenHash && type) {
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    if (!error) user = data.user
+  }
+
+  if (!user) {
+    return NextResponse.redirect(`${origin}/auth/login?error=invalid_link`)
   }
 
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', data.user.id)
+    .eq('id', user.id)
     .single()
 
   if (!profile) {
-    const meta = data.user.user_metadata ?? {}
+    const meta = user.user_metadata ?? {}
     await supabase.from('profiles').insert({
-      id: data.user.id,
+      id: user.id,
       name: meta.name ?? meta.full_name ?? '',
-      email: data.user.email,
+      email: user.email,
       city: meta.city ?? '',
       role: meta.role ?? 'client',
     })

@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
   const params = useSearchParams()
   const [role, setRole] = useState<'client' | 'artist'>('client')
@@ -133,5 +133,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   )
 }

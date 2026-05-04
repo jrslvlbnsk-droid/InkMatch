@@ -103,6 +103,13 @@ export default function ArtistDashboard() {
               {item.label}
             </button>
           ))}
+          <div className="my-2 border-t border-white/5" />
+          <button
+            onClick={() => router.push('/client')}
+            className="text-left px-3 py-2.5 rounded-lg text-sm text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
+          >
+            🔍 Hledat tatéry
+          </button>
         </nav>
         <button
           onClick={handleSignOut}

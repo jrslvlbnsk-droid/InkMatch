@@ -138,7 +138,7 @@ export default function ClientPage() {
                     {artist.name?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium mb-0.5 text-sm sm:text-base">{artist.name}</p>
+                    <p className="font-medium mb-0.5 text-sm sm:text-base">{artist.nickname || artist.name}</p>
                     <p className="text-white/40 text-xs mb-2">{artist.city}</p>
                     {artist.bio && (
                       <p className="text-white/60 text-xs sm:text-sm line-clamp-2 leading-relaxed">

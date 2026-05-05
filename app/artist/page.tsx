@@ -135,7 +135,7 @@ export default function ArtistDashboard() {
         {tab === 'overview' && (
           <div>
             <h2 className="text-lg sm:text-xl font-medium mb-1">
-              Dobrý den, {profile?.name}
+              Dobrý den, {profile?.nickname || profile?.name}
             </h2>
             <p className="text-white/40 text-sm mb-6 sm:mb-8">Přehled vašeho profilu</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">

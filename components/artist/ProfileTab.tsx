@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 const STYLES = [
-  'Blackwork', 'Traditional', 'Neo-traditional', 'Realism', 'Watercolor',
+  'Blackwork', 'Traditional', 'Neo-traditional', 'Realism', 'Microrealism', 'Watercolor',
   'Tribal', 'Japanese', 'Geometric', 'Minimalist', 'Lettering',
   'Old School', 'New School', 'Trash Polka', 'Dotwork',
 ]
@@ -17,6 +17,7 @@ interface Props {
 
 export default function ProfileTab({ userId, profile, onUpdate }: Props) {
   const [form, setForm] = useState({
+    nickname: profile?.nickname ?? '',
     name: profile?.name ?? '',
     city: profile?.city ?? '',
     bio: profile?.bio ?? '',
@@ -59,6 +60,15 @@ export default function ProfileTab({ userId, profile, onUpdate }: Props) {
       <p className="text-white/40 text-sm mb-6">Upravte své veřejné údaje</p>
 
       <div className="card p-6 space-y-5 max-w-xl">
+        <div>
+          <label className="label">Přezdívka</label>
+          <input
+            className="input"
+            placeholder="Jak vás klienti znají..."
+            value={form.nickname}
+            onChange={(e) => setForm((f) => ({ ...f, nickname: e.target.value }))}
+          />
+        </div>
         <div>
           <label className="label">Jméno</label>
           <input

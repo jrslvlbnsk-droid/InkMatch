@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
   let query = supabase
     .from('profiles')
-    .select('id, name, city, bio, styles, avatar_url')
+    .select('id, name, nickname, city, bio, styles, avatar_url')
     .eq('role', 'artist')
 
   if (city) query = query.ilike('city', `%${city}%`)
@@ -56,7 +56,7 @@ Dostupní tatéři:
 ${filtered
   .map(
     (a, i) =>
-      `${i}. ${a.name} | ${a.city} | Styly: ${(a.styles ?? []).join(', ')} | Bio: ${a.bio ?? '(žádné bio)'}`
+      `${i}. ${a.nickname || a.name} | ${a.city} | Styly: ${(a.styles ?? []).join(', ')} | Bio: ${a.bio ?? '(žádné bio)'}`
   )
   .join('\n')}
 

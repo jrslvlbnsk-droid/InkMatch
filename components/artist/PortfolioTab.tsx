@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 const STYLES = [
-  'Blackwork', 'Traditional', 'Neo-traditional', 'Realism', 'Watercolor',
+  'Blackwork', 'Traditional', 'Neo-traditional', 'Realism', 'Microrealism', 'Watercolor',
   'Tribal', 'Japanese', 'Geometric', 'Minimalist', 'Lettering',
   'Old School', 'New School', 'Trash Polka', 'Dotwork',
 ]

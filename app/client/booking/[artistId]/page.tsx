@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { cormorant } from '@/lib/fonts'
 
 const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
 const MONTH_NAMES = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec']
@@ -20,7 +21,7 @@ function Calendar({
   const monthIdx = month.getMonth()
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate()
   const firstDayRaw = new Date(year, monthIdx, 1).getDay()
-  const firstDay = (firstDayRaw + 6) % 7 // Mon = 0
+  const firstDay = (firstDayRaw + 6) % 7
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const cells = [
@@ -69,7 +70,7 @@ function Calendar({
               type="button"
               disabled={isPast}
               onClick={() => onSelect(date)}
-              className={`py-2 rounded text-xs transition-all ${
+              className={`py-1.5 sm:py-2 rounded text-xs transition-all ${
                 isPast
                   ? 'text-white/20 cursor-not-allowed'
                   : isSel
@@ -143,42 +144,42 @@ export default function BookingPage({ params }: { params: { artistId: string } }
 
   return (
     <div className="min-h-screen">
-      <nav className="flex items-center gap-4 px-8 py-4 border-b border-white/5">
-        <button onClick={() => router.back()} className="btn-outline text-xs px-4 py-2">
+      <nav className="flex items-center gap-3 sm:gap-4 px-4 sm:px-8 py-4 border-b border-white/5">
+        <button onClick={() => router.back()} className="btn-outline text-xs px-3 py-2 sm:px-4">
           ← Zpět
         </button>
-        <div style={{ fontFamily: 'Georgia,serif' }} className="text-xl font-semibold">
+        <div className={`${cormorant.className} text-xl font-semibold`}>
           Ink<span className="text-gold">Match</span>
         </div>
       </nav>
 
-      <main className="max-w-xl mx-auto px-6 py-10">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-14 h-14 rounded-full bg-surface2 border border-white/10 flex items-center justify-center text-xl text-white/30 shrink-0">
+      <main className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface2 border border-white/10 flex items-center justify-center text-lg sm:text-xl text-white/30 shrink-0">
             {artist.name?.[0]?.toUpperCase()}
           </div>
           <div>
-            <h1 className="text-xl font-medium">{artist.name}</h1>
+            <h1 className="text-lg sm:text-xl font-medium">{artist.name}</h1>
             <p className="text-white/40 text-sm">{artist.city}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="card p-6">
-            <h2 className="font-medium mb-4">Vyberte datum</h2>
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="card p-4 sm:p-6">
+            <h2 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Vyberte datum</h2>
             <Calendar selected={selectedDate} onSelect={setSelectedDate} />
           </div>
 
           {selectedDate && (
-            <div className="card p-6">
-              <h2 className="font-medium mb-4">Vyberte čas</h2>
+            <div className="card p-4 sm:p-6">
+              <h2 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Vyberte čas</h2>
               <div className="grid grid-cols-3 gap-2">
                 {TIME_SLOTS.map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setSelectedTime(t)}
-                    className={`py-2.5 rounded-lg text-sm border transition-all ${
+                    className={`py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm border transition-all ${
                       selectedTime === t
                         ? 'border-gold text-gold bg-gold/10'
                         : 'border-white/10 text-white/60 hover:border-white/25'

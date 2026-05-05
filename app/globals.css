@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap');
-
 :root {
   --gold: #d4b98c; --gold-dim: rgba(212,185,140,0.12);
   --ink: #080807; --surface: #111110; --surface2: #1a1916;

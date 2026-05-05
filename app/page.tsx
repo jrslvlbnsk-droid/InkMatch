@@ -1,42 +1,45 @@
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 async function getStats() {
-  const supabase = createClient(
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll() {},
+      },
+    }
   )
 
   const [
     { count: artistCount },
-    { count: bookingCount },
-    { data: reviews },
-    { data: artistProfiles },
+    { count: userCount },
+    { data: ratingData },
+    { data: stylesData },
   ] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('role', 'artist'),
-    supabase
-      .from('bookings')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'confirmed'),
-    supabase.from('reviews').select('rating'),
-    supabase.from('profiles').select('styles').eq('role', 'artist'),
+    supabase.from('artists').select('*', { count: 'exact', head: true }),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('artists').select('rating').gt('rating', 0),
+    supabase.from('artists').select('styles'),
   ])
 
-  const avgRating =
-    reviews?.length
-      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-      : 0
+  const avgRating = ratingData?.length
+    ? ratingData.reduce((s, r) => s + (r.rating ?? 0), 0) / ratingData.length
+    : 0
 
   const uniqueStyles = new Set(
-    (artistProfiles ?? []).flatMap((a) => a.styles ?? [])
+    (stylesData ?? []).flatMap((a) => a.styles ?? [])
   ).size
 
   return {
     artists: artistCount ?? 0,
-    bookings: bookingCount ?? 0,
+    users: userCount ?? 0,
     rating: avgRating,
     styles: uniqueStyles,
   }
@@ -66,7 +69,7 @@ export default async function Home() {
         <div className="flex gap-12 border-t border-white/5 pt-10">
           {[
             [stats.artists.toString(), 'Tateru'],
-            [stats.bookings.toLocaleString('cs-CZ'), 'Realizaci'],
+            [stats.users.toLocaleString('cs-CZ'), 'Uzivatelu'],
             [stats.rating ? stats.rating.toFixed(1) : '—', 'Hodnoceni'],
             [stats.styles.toString(), 'Stylu'],
           ].map(([n, l]) => (

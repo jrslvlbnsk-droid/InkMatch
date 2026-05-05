@@ -117,20 +117,20 @@ export default function BookingPage({ params }: { params: { artistId: string } }
     }
     setSubmitting(true)
     const supabase = createClient()
-    const { error } = await supabase.from('bookings').insert({
+    const { data: bookingData, error } = await supabase.from('bookings').insert({
       artist_id: params.artistId,
       client_id: user.id,
       date: selectedDate.toISOString().split('T')[0],
       time: selectedTime,
       description: description || null,
       status: 'pending',
-    })
+    }).select()
     setSubmitting(false)
     if (error) {
       toast.error('Rezervace selhala')
       return
     }
-    router.push('/client/success')
+    router.push(`/client/success?artistId=${params.artistId}&bookingId=${bookingData?.[0]?.id}`)
   }
 
   if (!artist) {

@@ -29,39 +29,23 @@ export default function ArtistDashboard() {
   useEffect(() => {
     const init = async () => {
       const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login')
-        return
-      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/auth/login'); return }
       setUser(user)
 
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
+        .from('profiles').select('*').eq('id', user.id).single()
       setProfile(profile)
 
-      const [{ count: bookings }, { data: reviews }, { count: photos }] =
-        await Promise.all([
-          supabase
-            .from('bookings')
-            .select('*', { count: 'exact', head: true })
-            .eq('artist_id', user.id),
-          supabase.from('reviews').select('rating').eq('artist_id', user.id),
-          supabase
-            .from('portfolio_images')
-            .select('*', { count: 'exact', head: true })
-            .eq('artist_id', user.id),
-        ])
+      const [{ count: bookings }, { data: reviews }, { count: photos }] = await Promise.all([
+        supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
+        supabase.from('reviews').select('rating').eq('artist_id', user.id),
+        supabase.from('portfolio_images').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
+      ])
 
-      const avgRating =
-        reviews?.length
-          ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length
-          : 0
+      const avgRating = reviews?.length
+        ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length
+        : 0
       setStats({ bookings: bookings ?? 0, rating: avgRating, photos: photos ?? 0 })
       setLoading(false)
     }
@@ -119,19 +103,25 @@ export default function ArtistDashboard() {
       </aside>
 
       {/* Mobilní header */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 sticky top-0 z-50 bg-ink/95 backdrop-blur-xl">
+      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 sticky top-0 z-40 bg-ink/95 backdrop-blur-xl">
         <div className={`${cormorant.className} text-xl font-semibold`}>
           Ink<span className="text-gold">Match</span>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="btn-outline text-xs px-3 py-1.5"
-        >
-          Odhlásit
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/client')}
+            className="btn-outline text-xs px-3 py-1.5"
+            title="Hledat tatéry"
+          >
+            🔍 Hledat
+          </button>
+          <button onClick={handleSignOut} className="btn-outline text-xs px-3 py-1.5">
+            Odhlásit
+          </button>
+        </div>
       </div>
 
-      <main className="flex-1 p-4 sm:p-8 overflow-y-auto pb-20 md:pb-8">
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto pb-24 md:pb-8">
         {tab === 'overview' && (
           <div>
             <h2 className="text-lg sm:text-xl font-medium mb-1">
@@ -157,10 +147,7 @@ export default function ArtistDashboard() {
                 <p className="text-sm text-white/60 mb-3">
                   Váš profil ještě není kompletní. Doplňte bio a styly pro lepší viditelnost.
                 </p>
-                <button
-                  onClick={() => setTab('profile')}
-                  className="btn-gold text-xs px-4 py-2"
-                >
+                <button onClick={() => setTab('profile')} className="btn-gold text-xs px-4 py-2">
                   Dokončit profil
                 </button>
               </div>
@@ -175,20 +162,27 @@ export default function ArtistDashboard() {
         )}
       </main>
 
-      {/* Bottom navigation — pouze na mobilu */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-ink/95 backdrop-blur-xl border-t border-white/5 flex z-50">
+      {/* Bottom navigation — pouze na mobilu, vždy fixed */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-ink border-t border-white/5 flex">
         {NAV.map((item) => (
           <button
             key={item.id}
             onClick={() => setTab(item.id)}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-xs transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors ${
               tab === item.id ? 'text-gold' : 'text-white/35'
             }`}
           >
             <span className="text-base leading-none">{item.icon}</span>
-            <span className="text-[10px] leading-tight">{item.label}</span>
+            <span className="text-[9px] leading-tight">{item.label}</span>
           </button>
         ))}
+        <button
+          onClick={() => router.push('/client')}
+          className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-white/35"
+        >
+          <span className="text-base leading-none">🔍</span>
+          <span className="text-[9px] leading-tight">Hledat</span>
+        </button>
       </nav>
     </div>
   )

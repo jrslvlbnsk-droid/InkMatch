@@ -17,14 +17,31 @@ export default async function ArtistPublicProfile({ params }: { params: { id: st
     }
   )
 
-  const [{ data: artist }, { data: images }] = await Promise.all([
-    supabase.from('profiles').select('id, name, nickname, city, bio, styles, instagram, website').eq('id', params.id).single(),
-    supabase.from('portfolio_images').select('id, url, style').eq('artist_id', params.id).order('created_at', { ascending: false }),
+  const [{ data: artist }, { data: images }, { data: reviews }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, name, nickname, city, bio, styles, instagram, website')
+      .eq('id', params.id)
+      .single(),
+    supabase
+      .from('portfolio_images')
+      .select('id, url, style')
+      .eq('artist_id', params.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('reviews')
+      .select('id, rating, comment, created_at, client:profiles!client_id(name)')
+      .eq('artist_id', params.id)
+      .order('created_at', { ascending: false }),
   ])
 
   if (!artist) notFound()
 
   const displayName = artist.nickname || artist.name
+
+  const avgRating = reviews?.length
+    ? reviews.reduce((s, r) => s + (r.rating ?? 0), 0) / reviews.length
+    : null
 
   return (
     <div className="min-h-screen">
@@ -51,9 +68,15 @@ export default async function ArtistPublicProfile({ params }: { params: { id: st
               <p className="text-white/30 text-xs mb-1">{artist.name}</p>
             )}
             {artist.city && (
-              <p className="text-white/50 text-sm mb-3">{artist.city}</p>
+              <p className="text-white/50 text-sm mb-2">{artist.city}</p>
             )}
-            <div className="flex gap-2 flex-wrap">
+            {avgRating !== null && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-gold text-sm">{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5 - Math.round(avgRating))}</span>
+                <span className="text-white/40 text-xs">{avgRating.toFixed(1)} ({reviews!.length} hodnocení)</span>
+              </div>
+            )}
+            <div className="flex gap-3 flex-wrap">
               {artist.instagram && (
                 <a
                   href={`https://instagram.com/${artist.instagram.replace('@', '')}`}
@@ -107,7 +130,7 @@ export default async function ArtistPublicProfile({ params }: { params: { id: st
 
         {/* Portfolio */}
         {images && images.length > 0 && (
-          <div>
+          <div className="mb-8">
             <p className="label mb-3">Portfolio</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               {images.map((img) => (
@@ -126,8 +149,28 @@ export default async function ArtistPublicProfile({ params }: { params: { id: st
           </div>
         )}
 
+        {/* Hodnocení */}
+        {reviews && reviews.length > 0 && (
+          <div className="mb-8">
+            <p className="label mb-3">Hodnocení ({reviews.length})</p>
+            <div className="space-y-3">
+              {reviews.map((r: any) => (
+                <div key={r.id} className="card p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-white/60 text-xs font-medium">{r.client?.name ?? 'Klient'}</span>
+                    <span className="text-gold text-xs">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                  </div>
+                  {r.comment && (
+                    <p className="text-white/50 text-xs leading-relaxed">{r.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* CTA dole */}
-        <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-white/40 text-sm">Zaujal vás {displayName}?</p>
           <Link href={`/client/booking/${params.id}`} className="btn-gold px-8 py-3 w-full sm:w-auto text-center">
             Rezervovat termín

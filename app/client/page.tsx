@@ -84,9 +84,7 @@ export default function ClientPage() {
               className="input min-h-[100px] sm:min-h-[120px] resize-none"
               placeholder="Chci realistické tetování vrány na předloktí, tmavé tóny, detailní peří, styl blackwork..."
               value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -117,11 +115,7 @@ export default function ClientPage() {
               </select>
             </div>
           </div>
-          <button
-            type="submit"
-            className="btn-gold w-full"
-            disabled={searching}
-          >
+          <button type="submit" className="btn-gold w-full" disabled={searching}>
             {searching ? 'Hledám...' : 'Hledat tatéra'}
           </button>
         </form>
@@ -135,7 +129,7 @@ export default function ClientPage() {
               {artists.map((artist) => (
                 <div key={artist.id} className="card p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-surface2 border border-white/10 flex items-center justify-center text-white/30 text-base sm:text-lg shrink-0">
-                    {artist.name?.[0]?.toUpperCase() ?? '?'}
+                    {(artist.nickname || artist.name)?.[0]?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium mb-0.5 text-sm sm:text-base">{artist.nickname || artist.name}</p>
@@ -148,22 +142,27 @@ export default function ClientPage() {
                     {artist.styles?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2 sm:mt-3">
                         {artist.styles.slice(0, 4).map((s: string) => (
-                          <span
-                            key={s}
-                            className="px-2 py-0.5 rounded-full bg-surface2 text-white/50 text-xs"
-                          >
+                          <span key={s} className="px-2 py-0.5 rounded-full bg-surface2 text-white/50 text-xs">
                             {s}
                           </span>
                         ))}
                       </div>
                     )}
                   </div>
-                  <Link
-                    href={`/client/booking/${artist.id}`}
-                    className="btn-gold text-xs px-3 py-2 sm:px-4 shrink-0"
-                  >
-                    Rezervovat
-                  </Link>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Link
+                      href={`/client/booking/${artist.id}`}
+                      className="btn-gold text-xs px-3 py-2 sm:px-4 text-center"
+                    >
+                      Rezervovat
+                    </Link>
+                    <Link
+                      href={`/artist/${artist.id}`}
+                      className="btn-outline text-xs px-3 py-2 sm:px-4 text-center"
+                    >
+                      Profil
+                    </Link>
+                  </div>
                 </div>
               ))}
               {artists.length === 0 && (

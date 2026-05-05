@@ -23,14 +23,16 @@ export default function PortfolioTab({ userId }: { userId: string }) {
       .select('*')
       .eq('artist_id', userId)
       .order('created_at', { ascending: false })
-      .then(({ data }) => setImages(data ?? []))
+      .then(({ data, error }) => {
+        console.log('[Portfolio] fetch:', { count: data?.length, error })
+        setImages(data ?? [])
+      })
   }, [userId])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const objectUrl = URL.createObjectURL(file)
-    setPreview({ url: objectUrl, file })
+    setPreview({ url: URL.createObjectURL(file), file })
   }
 
   const handleUpload = async () => {
@@ -39,38 +41,42 @@ export default function PortfolioTab({ userId }: { userId: string }) {
     const supabase = createClient()
     const fileName = `${userId}/${Date.now()}_${preview.file.name.replace(/\s/g, '_')}`
 
+    // 1. Upload do Storage
     const { error: uploadError } = await supabase.storage
       .from('portfolio')
       .upload(fileName, preview.file)
 
     if (uploadError) {
-      console.error('[PortfolioTab] upload error:', uploadError)
+      console.error('[Portfolio] storage upload error:', uploadError)
       toast.error('Nahrávání selhalo: ' + uploadError.message)
       setUploading(false)
       return
     }
 
+    // 2. Získej publicUrl
     const { data: { publicUrl } } = supabase.storage.from('portfolio').getPublicUrl(fileName)
-    console.log('[PortfolioTab] publicUrl:', publicUrl)
+    console.log('[Portfolio] publicUrl:', publicUrl)
 
-    const { data: img, error: insertError } = await supabase
+    // 3. Insert do portfolio_images
+    const { data: inserted, error: insertError } = await supabase
       .from('portfolio_images')
       .insert({ artist_id: userId, url: publicUrl, style: selectedStyle })
       .select()
       .single()
 
+    console.log('[Portfolio] insert result:', { inserted, insertError })
+
     if (insertError) {
-      console.error('[PortfolioTab] insert error:', insertError)
-      toast.error('Uložení záznamu selhalo')
-      setUploading(false)
-      return
+      console.error('[Portfolio] DB insert error:', insertError)
+      toast.error('Uložení do DB selhalo: ' + insertError.message)
+      // Fotka je v Storage – přidej do stavu s dočasným id aby se zobrazila
+      const tempEntry = { id: `temp_${Date.now()}`, url: publicUrl, style: selectedStyle, artist_id: userId }
+      setImages((prev) => [tempEntry, ...prev])
+    } else {
+      // Úspěšně uloženo – přidej záznam z DB
+      setImages((prev) => [inserted, ...prev])
+      toast.success('Fotografie nahrána')
     }
-
-    console.log('[PortfolioTab] inserted image:', img)
-
-    // Okamžitě přidej do galerie
-    setImages((prev) => [img, ...prev])
-    toast.success('Fotografie nahrána')
 
     // Reset
     URL.revokeObjectURL(preview.url)
@@ -87,7 +93,8 @@ export default function PortfolioTab({ userId }: { userId: string }) {
 
   const handleDelete = async (id: string) => {
     const supabase = createClient()
-    await supabase.from('portfolio_images').delete().eq('id', id)
+    const { error } = await supabase.from('portfolio_images').delete().eq('id', id)
+    console.log('[Portfolio] delete:', { id, error })
     setImages((prev) => prev.filter((i) => i.id !== id))
     toast.success('Fotografie odstraněna')
   }
@@ -126,11 +133,9 @@ export default function PortfolioTab({ userId }: { userId: string }) {
           </div>
         ) : (
           <div className="flex items-start gap-4 flex-wrap sm:flex-nowrap">
-            {/* Náhled */}
             <div className="w-24 h-24 rounded-lg overflow-hidden bg-surface2 shrink-0">
               <img src={preview.url} alt="náhled" className="w-full h-full object-cover" />
             </div>
-
             <div className="flex-1 space-y-3">
               <div>
                 <label className="label">Styl fotografie</label>
@@ -145,7 +150,6 @@ export default function PortfolioTab({ userId }: { userId: string }) {
                   ))}
                 </select>
               </div>
-
               <div className="flex gap-2">
                 <button
                   onClick={handleUpload}
@@ -161,11 +165,7 @@ export default function PortfolioTab({ userId }: { userId: string }) {
                     'Nahrát fotografii'
                   )}
                 </button>
-                <button
-                  onClick={handleCancelPreview}
-                  disabled={uploading}
-                  className="btn-outline disabled:opacity-50"
-                >
+                <button onClick={handleCancelPreview} disabled={uploading} className="btn-outline disabled:opacity-50">
                   Zrušit
                 </button>
               </div>
@@ -177,15 +177,8 @@ export default function PortfolioTab({ userId }: { userId: string }) {
       {/* Galerie */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {images.map((img) => (
-          <div
-            key={img.id}
-            className="relative group aspect-square rounded-lg overflow-hidden bg-surface2"
-          >
-            <img
-              src={img.url}
-              alt={img.style}
-              className="w-full h-full object-cover"
-            />
+          <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden bg-surface2">
+            <img src={img.url} alt={img.style} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-ink/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
               <span className="text-gold text-xs font-medium">{img.style}</span>
               <button

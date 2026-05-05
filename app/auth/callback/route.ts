@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
+import { sendWelcomeClient, sendWelcomeArtist } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -48,14 +49,27 @@ export async function GET(request: NextRequest) {
   if (!profile) {
     const meta = user.user_metadata ?? {}
     const role: string = meta.role ?? 'client'
+    const name: string = meta.name ?? meta.full_name ?? ''
+
     await supabase.from('profiles').insert({
       id: user.id,
-      name: meta.name ?? meta.full_name ?? '',
+      name,
       email: user.email,
       city: meta.city ?? '',
       role,
     })
-    // Noví tatéři jdou do onboardingu
+
+    // Uvítací email — fire and forget, nesmí blokovat redirect
+    try {
+      if (role === 'artist') {
+        await sendWelcomeArtist({ name, email: user.email! })
+      } else {
+        await sendWelcomeClient({ name, email: user.email! })
+      }
+    } catch (err) {
+      console.error('[Callback] welcome email failed:', err)
+    }
+
     return NextResponse.redirect(
       `${origin}/${role === 'artist' ? 'artist/onboarding' : 'client'}`
     )

@@ -9,53 +9,25 @@ const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00
 const MONTH_NAMES = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec']
 const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 
-function Calendar({
-  selected,
-  onSelect,
-}: {
-  selected: Date | null
-  onSelect: (d: Date) => void
-}) {
+function Calendar({ selected, onSelect }: { selected: Date | null; onSelect: (d: Date) => void }) {
   const [month, setMonth] = useState(new Date())
   const year = month.getFullYear()
   const monthIdx = month.getMonth()
   const daysInMonth = new Date(year, monthIdx + 1, 0).getDate()
-  const firstDayRaw = new Date(year, monthIdx, 1).getDay()
-  const firstDay = (firstDayRaw + 6) % 7
+  const firstDay = (new Date(year, monthIdx, 1).getDay() + 6) % 7
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const cells = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ]
+  const cells = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <button
-          type="button"
-          onClick={() => setMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-          className="btn-outline text-xs px-3 py-1.5"
-        >
-          ‹
-        </button>
-        <span className="text-sm font-medium">
-          {MONTH_NAMES[monthIdx]} {year}
-        </span>
-        <button
-          type="button"
-          onClick={() => setMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-          className="btn-outline text-xs px-3 py-1.5"
-        >
-          ›
-        </button>
+        <button type="button" onClick={() => setMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))} className="btn-outline text-xs px-3 py-1.5">‹</button>
+        <span className="text-sm font-medium">{MONTH_NAMES[monthIdx]} {year}</span>
+        <button type="button" onClick={() => setMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))} className="btn-outline text-xs px-3 py-1.5">›</button>
       </div>
       <div className="grid grid-cols-7 mb-1">
-        {DAY_NAMES.map((d) => (
-          <div key={d} className="text-center text-xs text-white/30 py-1">
-            {d}
-          </div>
-        ))}
+        {DAY_NAMES.map((d) => <div key={d} className="text-center text-xs text-white/30 py-1">{d}</div>)}
       </div>
       <div className="grid grid-cols-7 gap-0.5">
         {cells.map((d, i) => {
@@ -65,19 +37,8 @@ function Calendar({
           const isPast = date < today
           const isSel = selected?.getTime() === date.getTime()
           return (
-            <button
-              key={i}
-              type="button"
-              disabled={isPast}
-              onClick={() => onSelect(date)}
-              className={`py-1.5 sm:py-2 rounded text-xs transition-all ${
-                isPast
-                  ? 'text-white/20 cursor-not-allowed'
-                  : isSel
-                  ? 'bg-gold text-ink font-semibold'
-                  : 'hover:bg-white/5 text-white/70'
-              }`}
-            >
+            <button key={i} type="button" disabled={isPast} onClick={() => onSelect(date)}
+              className={`py-1.5 sm:py-2 rounded text-xs transition-all ${isPast ? 'text-white/20 cursor-not-allowed' : isSel ? 'bg-gold text-ink font-semibold' : 'hover:bg-white/5 text-white/70'}`}>
               {d}
             </button>
           )
@@ -102,21 +63,15 @@ export default function BookingPage({ params }: { params: { artistId: string } }
       if (!user) { router.push('/auth/login'); return }
       setUser(user)
     })
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', params.artistId)
-      .single()
+    supabase.from('profiles').select('*').eq('id', params.artistId).single()
       .then(({ data }) => setArtist(data))
   }, [params.artistId, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedDate || !selectedTime) {
-      toast.error('Vyberte datum a čas')
-      return
-    }
+    if (!selectedDate || !selectedTime) { toast.error('Vyberte datum a čas'); return }
     setSubmitting(true)
+
     const supabase = createClient()
     const { data: bookingData, error } = await supabase.from('bookings').insert({
       artist_id: params.artistId,
@@ -126,11 +81,47 @@ export default function BookingPage({ params }: { params: { artistId: string } }
       description: description || null,
       status: 'pending',
     }).select()
+
     setSubmitting(false)
-    if (error) {
-      toast.error('Rezervace selhala')
-      return
+    if (error) { toast.error('Rezervace selhala'); return }
+
+    const booking = {
+      id: bookingData?.[0]?.id ?? '',
+      date: selectedDate.toISOString().split('T')[0],
+      time: selectedTime,
+      description: description || null,
     }
+    const clientName = user.user_metadata?.name || user.email?.split('@')[0] || 'Klient'
+    const clientEmail = user.email ?? ''
+
+    // Emaily odesíláme asynchronně — neblokujeme přesměrování
+    Promise.allSettled([
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          type: 'bookingConfirmation',
+          booking,
+          artist: { name: artist.name, nickname: artist.nickname, city: artist.city },
+          client: { name: clientName, email: clientEmail },
+        }),
+      }),
+      fetch('/api/email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          type: 'bookingNotification',
+          booking,
+          artist: { name: artist.name, nickname: artist.nickname, city: artist.city, email: artist.email },
+          client: { name: clientName, email: clientEmail },
+        }),
+      }),
+    ]).then((results) => {
+      results.forEach((r) => {
+        if (r.status === 'rejected') console.error('[Booking] email error:', r.reason)
+      })
+    })
+
     router.push(`/client/success?artistId=${params.artistId}&bookingId=${bookingData?.[0]?.id}`)
   }
 
@@ -145,9 +136,7 @@ export default function BookingPage({ params }: { params: { artistId: string } }
   return (
     <div className="min-h-screen">
       <nav className="flex items-center gap-3 sm:gap-4 px-4 sm:px-8 py-4 border-b border-white/5">
-        <button onClick={() => router.back()} className="btn-outline text-xs px-3 py-2 sm:px-4">
-          ← Zpět
-        </button>
+        <button onClick={() => router.back()} className="btn-outline text-xs px-3 py-2 sm:px-4">← Zpět</button>
         <div className={`${cormorant.className} text-xl font-semibold`}>
           Ink<span className="text-gold">Match</span>
         </div>
@@ -156,10 +145,10 @@ export default function BookingPage({ params }: { params: { artistId: string } }
       <main className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface2 border border-white/10 flex items-center justify-center text-lg sm:text-xl text-white/30 shrink-0">
-            {artist.name?.[0]?.toUpperCase()}
+            {(artist.nickname || artist.name)?.[0]?.toUpperCase()}
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-medium">{artist.name}</h1>
+            <h1 className="text-lg sm:text-xl font-medium">{artist.nickname || artist.name}</h1>
             <p className="text-white/40 text-sm">{artist.city}</p>
           </div>
         </div>
@@ -175,16 +164,8 @@ export default function BookingPage({ params }: { params: { artistId: string } }
               <h2 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Vyberte čas</h2>
               <div className="grid grid-cols-3 gap-2">
                 {TIME_SLOTS.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setSelectedTime(t)}
-                    className={`py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm border transition-all ${
-                      selectedTime === t
-                        ? 'border-gold text-gold bg-gold/10'
-                        : 'border-white/10 text-white/60 hover:border-white/25'
-                    }`}
-                  >
+                  <button key={t} type="button" onClick={() => setSelectedTime(t)}
+                    className={`py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm border transition-all ${selectedTime === t ? 'border-gold text-gold bg-gold/10' : 'border-white/10 text-white/60 hover:border-white/25'}`}>
                     {t}
                   </button>
                 ))}
@@ -202,11 +183,7 @@ export default function BookingPage({ params }: { params: { artistId: string } }
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn-gold w-full py-3"
-            disabled={submitting || !selectedDate || !selectedTime}
-          >
+          <button type="submit" className="btn-gold w-full py-3" disabled={submitting || !selectedDate || !selectedTime}>
             {submitting ? 'Odesílám...' : 'Potvrdit rezervaci'}
           </button>
         </form>

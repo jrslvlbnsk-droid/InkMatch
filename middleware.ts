@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (path.startsWith('/client') && role !== 'client') {
+  if (path.startsWith('/client') && role !== 'client' && role !== 'artist') {
     return NextResponse.redirect(loginUrl)
   }
 

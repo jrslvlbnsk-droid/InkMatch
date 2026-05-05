@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 const STYLES = [
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function ProfileTab({ userId, profile, onUpdate }: Props) {
+  const router = useRouter()
   const [form, setForm] = useState({
     nickname: profile?.nickname ?? '',
     name: profile?.name ?? '',
@@ -52,6 +54,7 @@ export default function ProfileTab({ userId, profile, onUpdate }: Props) {
     }
     onUpdate(data)
     toast.success('Profil uložen')
+    router.push(`/artist/${userId}`)
   }
 
   return (

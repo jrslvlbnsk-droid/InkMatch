@@ -48,6 +48,11 @@ export async function middleware(request: NextRequest) {
 
   const role = profile?.role
 
+  // Veřejné profily tatérů (/artist/[id]) jsou přístupné všem přihlášeným uživatelům
+  if (path.match(/^\/artist\/[^/]+$/)) {
+    return response
+  }
+
   if (path.startsWith('/artist') && role !== 'artist') {
     return NextResponse.redirect(loginUrl)
   }

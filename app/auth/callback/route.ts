@@ -47,16 +47,21 @@ export async function GET(request: NextRequest) {
 
   if (!profile) {
     const meta = user.user_metadata ?? {}
+    const role: string = meta.role ?? 'client'
     await supabase.from('profiles').insert({
       id: user.id,
       name: meta.name ?? meta.full_name ?? '',
       email: user.email,
       city: meta.city ?? '',
-      role: meta.role ?? 'client',
+      role,
     })
-    const role: string = meta.role ?? 'client'
-    return NextResponse.redirect(`${origin}/${role === 'artist' ? 'artist' : 'client'}`)
+    // Noví tatéři jdou do onboardingu
+    return NextResponse.redirect(
+      `${origin}/${role === 'artist' ? 'artist/onboarding' : 'client'}`
+    )
   }
 
-  return NextResponse.redirect(`${origin}/${profile.role === 'artist' ? 'artist' : 'client'}`)
+  return NextResponse.redirect(
+    `${origin}/${profile.role === 'artist' ? 'artist' : 'client'}`
+  )
 }

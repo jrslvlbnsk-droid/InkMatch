@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
@@ -27,7 +27,7 @@ function buildGoogleCalendarUrl(artistName: string, date: string, time: string) 
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const artistId = searchParams.get('artistId')
   const bookingId = searchParams.get('bookingId')
@@ -181,5 +181,13 @@ export default function SuccessPage() {
         </Link>
       </main>
     </div>
+  )
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div>Načítání...</div>}>
+      <SuccessContent />
+    </Suspense>
   )
 }

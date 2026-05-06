@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation'
 import PortfolioTab from '@/components/artist/PortfolioTab'
 import ProfileTab from '@/components/artist/ProfileTab'
 import BookingsTab from '@/components/artist/BookingsTab'
+import MyBookingsTab from '@/components/artist/MyBookingsTab'
 import ReviewsTab from '@/components/artist/ReviewsTab'
 import { cormorant } from '@/lib/fonts'
 
-type Tab = 'overview' | 'portfolio' | 'bookings' | 'reviews' | 'profile'
+type Tab = 'overview' | 'portfolio' | 'bookings' | 'mybookings' | 'reviews' | 'profile'
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: 'overview', label: 'Přehled', icon: '◈' },
   { id: 'portfolio', label: 'Portfolio', icon: '◻' },
   { id: 'bookings', label: 'Rezervace', icon: '◷' },
+  { id: 'mybookings', label: 'Objednávky', icon: '◑' },
   { id: 'reviews', label: 'Hodnocení', icon: '◇' },
   { id: 'profile', label: 'Profil', icon: '◉' },
 ]
@@ -169,6 +171,7 @@ export default function ArtistDashboard() {
         )}
         {tab === 'portfolio' && <PortfolioTab userId={user?.id} />}
         {tab === 'bookings' && <BookingsTab userId={user?.id} />}
+        {tab === 'mybookings' && <MyBookingsTab userId={user?.id} />}
         {tab === 'reviews' && <ReviewsTab userId={user?.id} />}
         {tab === 'profile' && (
           <ProfileTab userId={user?.id} profile={profile} onUpdate={setProfile} />

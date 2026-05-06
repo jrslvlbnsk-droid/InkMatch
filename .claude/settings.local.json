@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(vercel --version)",
+      "Bash(npm install *)"
     ]
   }
 }

@@ -25,7 +25,7 @@ export default function ArtistDashboard() {
   const [tab, setTab] = useState<Tab>('overview')
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
-  const [stats, setStats] = useState({ bookings: 0, rating: 0, photos: 0 })
+  const [stats, setStats] = useState({ bookings: 0, myBookings: 0, rating: 0, photos: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -39,8 +39,9 @@ export default function ArtistDashboard() {
         .from('profiles').select('*').eq('id', user.id).single()
       setProfile(profile)
 
-      const [{ count: bookings }, { data: reviews }, { count: photos }] = await Promise.all([
+      const [{ count: bookings }, { count: myBookings }, { data: reviews }, { count: photos }] = await Promise.all([
         supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
+        supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('client_id', user.id),
         supabase.from('reviews').select('rating').eq('artist_id', user.id),
         supabase.from('portfolio_images').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
       ])
@@ -48,7 +49,7 @@ export default function ArtistDashboard() {
       const avgRating = reviews?.length
         ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length
         : 0
-      setStats({ bookings: bookings ?? 0, rating: avgRating, photos: photos ?? 0 })
+      setStats({ bookings: bookings ?? 0, myBookings: myBookings ?? 0, rating: avgRating, photos: photos ?? 0 })
       setLoading(false)
     }
     init()
@@ -143,18 +144,23 @@ export default function ArtistDashboard() {
                 <p className="text-white/40 text-sm mt-0.5">Přehled vašeho profilu</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
               {[
-                { label: 'Rezervace', value: stats.bookings },
-                { label: 'Hodnocení', value: stats.rating ? stats.rating.toFixed(1) : '—' },
-                { label: 'Fotografie', value: stats.photos },
+                { label: 'Příchozí rezervace', value: stats.bookings, tab: 'bookings' as Tab },
+                { label: 'Moje objednávky', value: stats.myBookings, tab: 'mybookings' as Tab },
+                { label: 'Hodnocení', value: stats.rating ? stats.rating.toFixed(1) : '—', tab: 'reviews' as Tab },
+                { label: 'Fotografie', value: stats.photos, tab: 'portfolio' as Tab },
               ].map((stat) => (
-                <div key={stat.label} className="card p-4 sm:p-5">
+                <button
+                  key={stat.label}
+                  onClick={() => setTab(stat.tab)}
+                  className="card p-4 sm:p-5 text-left hover:border-white/10 transition-colors"
+                >
                   <p className="label">{stat.label}</p>
                   <p className={`${cormorant.className} text-3xl text-gold mt-1`}>
                     {stat.value}
                   </p>
-                </div>
+                </button>
               ))}
             </div>
             {!profile?.bio && (

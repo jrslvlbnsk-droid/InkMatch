@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
     }
   )
 
+  // Zjisti aktuálního uživatele — tatér se nesmí zobrazit sám sobě
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+
   let query = supabase
     .from('profiles')
     .select('id, name, nickname, city, bio, styles, avatar_url')
@@ -25,9 +28,12 @@ export async function POST(request: NextRequest) {
 
   if (city) query = query.ilike('city', `%${city}%`)
 
-  const { data: artists } = await query.limit(30)
+  const { data: rawArtists } = await query.limit(30)
 
-  if (!artists?.length) {
+  // Vyfiltruj přihlášeného uživatele z výsledků
+  const artists = (rawArtists ?? []).filter((a) => a.id !== currentUser?.id)
+
+  if (!artists.length) {
     return NextResponse.json({ artists: [] })
   }
 

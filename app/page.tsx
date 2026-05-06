@@ -3,6 +3,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { cormorant } from '@/lib/fonts'
 
+export const revalidate = 0
+
 async function getStats() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -26,7 +28,7 @@ async function getStats() {
   ] = await Promise.all([
     supabase.from('artists').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('artists').select('rating').gt('rating', 0),
+    supabase.from('reviews').select('rating'),
     supabase.from('artists').select('styles'),
   ])
 

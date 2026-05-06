@@ -124,10 +124,23 @@ export default function ArtistDashboard() {
       <main className="flex-1 p-4 sm:p-8 overflow-y-auto pb-24 md:pb-8">
         {tab === 'overview' && (
           <div>
-            <h2 className="text-lg sm:text-xl font-medium mb-1">
-              Dobrý den, {profile?.nickname || profile?.name}
-            </h2>
-            <p className="text-white/40 text-sm mb-6 sm:mb-8">Přehled vašeho profilu</p>
+            <div className="flex items-center gap-4 mb-6 sm:mb-8">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-surface2 border border-white/10 shrink-0 flex items-center justify-center">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl text-white/30">
+                    {(profile?.nickname || profile?.name)?.[0]?.toUpperCase() ?? '?'}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-medium leading-tight">
+                  Dobrý den, {profile?.nickname || profile?.name}
+                </h2>
+                <p className="text-white/40 text-sm mt-0.5">Přehled vašeho profilu</p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
               {[
                 { label: 'Rezervace', value: stats.bookings },

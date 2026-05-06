@@ -88,7 +88,7 @@ export default function MyBookingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
     supabase
       .from('bookings')
-      .select('*, artist:profiles!artist_id(name, nickname)')
+      .select('*, artist:profiles!bookings_artist_id_fkey(name, nickname)')
       .eq('client_id', userId)
       .order('date', { ascending: false })
       .then(({ data, error }) => {

@@ -151,7 +151,7 @@ export default function BookingsTab({ userId }: { userId: string }) {
 
     supabase
       .from('bookings')
-      .select('*, client:profiles!client_id(name, email)')
+      .select('*, client:profiles!bookings_client_id_fkey(name, email)')
       .eq('artist_id', userId)
       .order('date', { ascending: true })
       .then(({ data, error }) => {

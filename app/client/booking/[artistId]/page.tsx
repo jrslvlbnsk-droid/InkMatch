@@ -94,8 +94,11 @@ export default function BookingPage({ params }: { params: { artistId: string } }
     const clientName = user.user_metadata?.name || user.email?.split('@')[0] || 'Klient'
     const clientEmail = user.email ?? ''
 
-    // Emaily odesíláme asynchronně — neblokujeme přesměrování
+    const bookingId = bookingData?.[0]?.id ?? ''
+
+    // Emaily asynchronně — neblokují přesměrování
     Promise.allSettled([
+      // Potvrzení klientovi
       fetch('/api/email', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -106,15 +109,11 @@ export default function BookingPage({ params }: { params: { artistId: string } }
           client: { name: clientName, email: clientEmail },
         }),
       }),
-      fetch('/api/email', {
+      // Notifikace tatérovi (server fetchuje data ze DB)
+      fetch('/api/notify', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          type: 'bookingNotification',
-          booking,
-          artist: { name: artist.name, nickname: artist.nickname, city: artist.city, email: artist.email },
-          client: { name: clientName, email: clientEmail },
-        }),
+        body: JSON.stringify({ bookingId }),
       }),
     ]).then((results) => {
       results.forEach((r) => {
@@ -122,7 +121,7 @@ export default function BookingPage({ params }: { params: { artistId: string } }
       })
     })
 
-    router.push(`/client/success?artistId=${params.artistId}&bookingId=${bookingData?.[0]?.id}`)
+    router.push(`/client/success?artistId=${params.artistId}&bookingId=${bookingId}`)
   }
 
   if (!artist) {

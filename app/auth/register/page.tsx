@@ -118,7 +118,7 @@ function RegisterForm() {
 
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
@@ -130,6 +130,13 @@ function RegisterForm() {
     if (error) {
       toast.error(error.message)
     } else {
+      if (data.user?.id) {
+        fetch('/api/consent', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ userId: data.user.id }),
+        }).catch((err) => console.error('[Consent] error:', err))
+      }
       router.push('/auth/check-email')
     }
   }

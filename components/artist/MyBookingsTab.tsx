@@ -2,23 +2,28 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Čeká na potvrzení',
+  rescheduled: 'Nový termín navržen',
   confirmed: 'Potvrzena',
   cancelled: 'Zrušena',
+  completed: 'Dokončena',
 }
 const STATUS_COLOR: Record<string, string> = {
   pending: 'text-yellow-400/80',
+  rescheduled: 'text-purple-400/80',
   confirmed: 'text-green-400/80',
   cancelled: 'text-white/30',
+  completed: 'text-blue-400/70',
 }
 
 const today = new Date().toISOString().split('T')[0]
 
-function BookingRow({ b }: { b: any }) {
+function BookingRow({ b, onCancel }: { b: any; onCancel: (id: string) => void }) {
   const artistName = b.artist?.nickname || b.artist?.name || 'Tatér'
-  const upcoming = b.status !== 'cancelled' && b.date >= today
+  const canCancel = (b.status === 'pending' || b.status === 'confirmed') && b.date >= today
 
   return (
     <div className="card p-4 flex items-center justify-between gap-4 flex-wrap">
@@ -29,28 +34,35 @@ function BookingRow({ b }: { b: any }) {
           <p className="text-white/35 text-xs mt-0.5 line-clamp-1">{b.description}</p>
         )}
       </div>
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
         <span className={`text-xs ${STATUS_COLOR[b.status] ?? 'text-white/40'}`}>
           {STATUS_LABEL[b.status] ?? b.status}
         </span>
-        {upcoming && (
-          <Link
-            href={`/artist/${b.artist_id}`}
-            className="btn-outline text-xs px-3 py-1.5"
+        <Link
+          href={`/artist/${b.artist_id}`}
+          className="btn-outline text-xs px-3 py-1.5"
+        >
+          Profil tatéra
+        </Link>
+        {canCancel && (
+          <button
+            onClick={() => onCancel(b.id)}
+            className="text-xs text-red-400/60 hover:text-red-400 transition-colors px-2 py-1.5"
           >
-            Profil
-          </Link>
+            Zrušit
+          </button>
         )}
       </div>
     </div>
   )
 }
 
-function Section({ title, items, defaultOpen, accent }: {
+function Section({ title, items, defaultOpen, accent, onCancel }: {
   title: string
   items: any[]
   defaultOpen: boolean
   accent?: string
+  onCancel: (id: string) => void
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
@@ -72,7 +84,7 @@ function Section({ title, items, defaultOpen, accent }: {
         <div className="space-y-2">
           {items.length === 0
             ? <p className="text-white/20 text-xs text-center py-6">Žádné rezervace v této sekci</p>
-            : items.map((b) => <BookingRow key={b.id} b={b} />)
+            : items.map((b) => <BookingRow key={b.id} b={b} onCancel={onCancel} />)
           }
         </div>
       )}
@@ -98,6 +110,20 @@ export default function MyBookingsTab({ userId }: { userId: string }) {
       })
   }, [userId])
 
+  const handleCancel = async (id: string) => {
+    const supabase = createClient()
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    if (error) { toast.error('Chyba při rušení rezervace'); return }
+    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: 'cancelled' } : b)))
+    toast.success('Rezervace zrušena')
+
+    fetch('/api/notify-cancellation', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bookingId: id, cancelledBy: 'client' }),
+    }).catch((err) => console.error('[Cancel] notify error:', err))
+  }
+
   if (loading) {
     return <div className="text-white/40 text-sm py-8">Načítání...</div>
   }
@@ -110,8 +136,8 @@ export default function MyBookingsTab({ userId }: { userId: string }) {
       <h2 className="text-xl font-medium mb-1">Moje objednávky</h2>
       <p className="text-white/40 text-sm mb-6">Rezervace, které jste provedli jako klient</p>
 
-      <Section title="Nadcházející" items={upcoming} defaultOpen={true} accent="text-gold/80" />
-      <Section title="Minulé" items={past} defaultOpen={false} accent="text-white/35" />
+      <Section title="Nadcházející" items={upcoming} defaultOpen={true} accent="text-gold/80" onCancel={handleCancel} />
+      <Section title="Minulé" items={past} defaultOpen={false} accent="text-white/35" onCancel={handleCancel} />
     </div>
   )
 }

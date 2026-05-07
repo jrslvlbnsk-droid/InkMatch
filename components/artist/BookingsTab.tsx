@@ -1,19 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 // ─── Konstanty ───────────────────────────────────────────────────────────────
-
-const DAYS = [
-  { label: 'Po', value: 1 },
-  { label: 'Út', value: 2 },
-  { label: 'St', value: 3 },
-  { label: 'Čt', value: 4 },
-  { label: 'Pá', value: 5 },
-  { label: 'So', value: 6 },
-  { label: 'Ne', value: 7 },
-]
 
 const ALL_HOURS = [
   '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -25,14 +16,6 @@ const MONTH_NAMES = [
   'Červenec','Srpen','Září','Říjen','Listopad','Prosinec',
 ]
 const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
-
-const STATUS_COLOR: Record<string, string> = {
-  pending: 'text-yellow-400/80',
-  rescheduled: 'text-purple-400/80',
-  confirmed: 'text-green-400/80',
-  cancelled: 'text-white/30',
-  completed: 'text-blue-400/70',
-}
 
 const STATUS_TOAST: Record<string, string> = {
   confirmed: 'Rezervace potvrzena',
@@ -255,7 +238,8 @@ function BookingCard({
                 >🔄</button>
               </>
             )}
-            {(b.status === 'completed' || b.status === 'cancelled') && (
+            {/* Cancelled only — no reschedule for completed */}
+            {b.status === 'cancelled' && (
               <button
                 onClick={() => onReschedule(b)}
                 className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 transition-colors flex items-center justify-center text-sm"
@@ -287,6 +271,17 @@ function BookingCard({
             <div className="mt-2 pt-2 border-t border-white/5">
               <span className="block text-[10px] uppercase tracking-widest text-white/30 mb-0.5">Popis</span>
               <p className="text-white/60 text-xs leading-relaxed">{b.description}</p>
+            </div>
+          )}
+          {b.client_id && (
+            <div className="mt-2 pt-2 border-t border-white/5">
+              <Link
+                href={`/artist/${b.client_id}`}
+                className="text-xs text-gold/50 hover:text-gold transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Profil klienta →
+              </Link>
             </div>
           )}
         </div>
@@ -337,14 +332,10 @@ export default function BookingsTab({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true)
   const [rescheduleBooking, setRescheduleBooking] = useState<any | null>(null)
 
-  // Dostupnost
-  const [availOpen, setAvailOpen] = useState(false)
+  // Availability — načtena pouze pro RescheduleModal, UI je v CalendarTab
   const [availDays, setAvailDays] = useState<number[]>([1, 2, 3, 4, 5])
   const [availTimes, setAvailTimes] = useState<string[]>(ALL_HOURS.slice(1, -1))
   const [blockedDates, setBlockedDates] = useState<string[]>([])
-  const [blockInput, setBlockInput] = useState('')
-  const [availSaving, setAvailSaving] = useState(false)
-  const [availLoaded, setAvailLoaded] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -362,7 +353,7 @@ export default function BookingsTab({ userId }: { userId: string }) {
 
     supabase
       .from('artist_availability')
-      .select('*')
+      .select('day_of_week, time_slots, blocked_dates')
       .eq('artist_id', userId)
       .single()
       .then(({ data }) => {
@@ -371,50 +362,22 @@ export default function BookingsTab({ userId }: { userId: string }) {
           setAvailTimes(data.time_slots ?? ALL_HOURS.slice(1, -1))
           setBlockedDates(data.blocked_dates ?? [])
         }
-        setAvailLoaded(true)
       })
   }, [userId])
-
-  const toggleDay = (v: number) =>
-    setAvailDays((prev) =>
-      prev.includes(v) ? prev.filter((d) => d !== v) : [...prev, v].sort((a, b) => a - b)
-    )
-
-  const toggleTime = (t: string) =>
-    setAvailTimes((prev) =>
-      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t].sort()
-    )
-
-  const addBlockedDate = () => {
-    if (blockInput && !blockedDates.includes(blockInput)) {
-      setBlockedDates((prev) => [...prev, blockInput].sort())
-      setBlockInput('')
-    }
-  }
-
-  const saveAvailability = async () => {
-    setAvailSaving(true)
-    const supabase = createClient()
-    const { error } = await supabase.from('artist_availability').upsert({
-      artist_id: userId,
-      day_of_week: availDays,
-      time_slots: availTimes,
-      blocked_dates: blockedDates,
-    })
-    setAvailSaving(false)
-    if (error) {
-      console.error('[Availability] save error:', error)
-      toast.error('Uložení selhalo: ' + error.message)
-    } else {
-      toast.success('Dostupnost uložena')
-    }
-  }
 
   const updateStatus = async (id: string, status: string) => {
     const supabase = createClient()
     await supabase.from('bookings').update({ status }).eq('id', id)
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)))
     toast.success(STATUS_TOAST[status] ?? 'Aktualizováno')
+
+    if (status === 'cancelled') {
+      fetch('/api/notify-cancellation', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ bookingId: id, cancelledBy: 'artist' }),
+      }).catch((err) => console.error('[Cancel] notify error:', err))
+    }
   }
 
   const handleReschedule = async (bookingId: string, date: string, time: string) => {
@@ -451,122 +414,12 @@ export default function BookingsTab({ userId }: { userId: string }) {
       <h2 className="text-xl font-medium mb-1">Rezervace</h2>
       <p className="text-white/40 text-sm mb-6">Správa příchozích rezervací</p>
 
-      {/* ── Moje dostupnost ─────────────────────────────────────────────── */}
-      <div className="mb-8">
-        <button
-          className="w-full flex items-center justify-between py-2 px-1 mb-2 group"
-          onClick={() => setAvailOpen((v) => !v)}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white/70">Moje dostupnost</span>
-            {availLoaded && (
-              <span className="text-xs text-white/25 bg-white/5 rounded-full px-2 py-0.5">
-                {availDays.length} dní · {availTimes.length} slotů
-              </span>
-            )}
-          </div>
-          <span className="text-white/25 text-xs group-hover:text-white/50 transition-colors">
-            {availOpen ? '▲' : '▼'}
-          </span>
-        </button>
-
-        {availOpen && (
-          <div className="card p-5 space-y-5">
-            <div>
-              <p className="label mb-3">Pracovní dny</p>
-              <div className="flex flex-wrap gap-2">
-                {DAYS.map(({ label, value }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => toggleDay(value)}
-                    className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
-                      availDays.includes(value)
-                        ? 'border-gold text-gold bg-gold/10'
-                        : 'border-white/10 text-white/40 hover:border-white/25'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="label mb-3">Časové sloty</p>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {ALL_HOURS.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => toggleTime(t)}
-                    className={`py-1.5 rounded-lg text-xs border transition-all ${
-                      availTimes.includes(t)
-                        ? 'border-gold text-gold bg-gold/10'
-                        : 'border-white/10 text-white/40 hover:border-white/25'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="label mb-3">Blokovaná data</p>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="date"
-                  className="input flex-1 text-sm"
-                  value={blockInput}
-                  min={today}
-                  onChange={(e) => setBlockInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addBlockedDate()}
-                />
-                <button
-                  type="button"
-                  onClick={addBlockedDate}
-                  disabled={!blockInput}
-                  className="btn-outline text-xs px-4 shrink-0 disabled:opacity-40"
-                >
-                  Blokovat
-                </button>
-              </div>
-              {blockedDates.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {blockedDates.map((d) => (
-                    <div key={d} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 text-xs">
-                      <span className="text-white/60">{d}</span>
-                      <button
-                        type="button"
-                        onClick={() => setBlockedDates((prev) => prev.filter((x) => x !== d))}
-                        className="text-white/30 hover:text-red-400 transition-colors leading-none"
-                      >✕</button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={saveAvailability}
-              disabled={availSaving}
-              className="btn-gold disabled:opacity-50"
-            >
-              {availSaving ? 'Ukládám...' : 'Uložit dostupnost'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── Sekce rezervací ──────────────────────────────────────────────── */}
       <BookingSection title="Nové rezervace" items={pending} defaultOpen={true} accent="text-yellow-400/80" onUpdate={updateStatus} onReschedule={setRescheduleBooking} />
       <BookingSection title="Čeká na odpověď klienta" items={rescheduled} defaultOpen={true} accent="text-purple-400/80" onUpdate={updateStatus} onReschedule={setRescheduleBooking} />
       <BookingSection title="Aktivní" items={active} defaultOpen={true} accent="text-green-400/70" onUpdate={updateStatus} onReschedule={setRescheduleBooking} />
       <BookingSection title="Dokončené" items={completed} defaultOpen={false} accent="text-blue-400/70" onUpdate={updateStatus} onReschedule={setRescheduleBooking} />
       <BookingSection title="Zrušené" items={cancelled} defaultOpen={false} accent="text-white/35" onUpdate={updateStatus} onReschedule={setRescheduleBooking} />
 
-      {/* ── Reschedule modal ─────────────────────────────────────────────── */}
       {rescheduleBooking && (
         <RescheduleModal
           booking={rescheduleBooking}

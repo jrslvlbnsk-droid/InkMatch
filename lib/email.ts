@@ -169,6 +169,59 @@ export async function sendRescheduleNotification(
   return null
 }
 
+export async function sendCancellationNotification(
+  booking: BookingPayload,
+  artist: ArtistPayload,
+  client: ClientPayload,
+  cancelledBy: 'artist' | 'client',
+) {
+  const artistName = artist.nickname || artist.name
+
+  if (cancelledBy === 'artist' && client.email) {
+    return resend.emails.send({
+      from: FROM,
+      to: client.email,
+      subject: `Váš termín byl zrušen — InkMatch`,
+      html: base(`
+        <h2 style="${S.h2}">Termín byl zrušen</h2>
+        <p style="${S.p}">Ahoj <strong style="${S.gold}">${client.name}</strong>, tatér <strong style="${S.gold}">${artistName}</strong> zrušil vaši rezervaci.</p>
+        <hr style="${S.hr}">
+        <span style="${S.label}">Tatér</span>
+        <span style="${S.value}">${artistName}${artist.city ? ` · ${artist.city}` : ''}</span>
+        <span style="${S.label}">Původní datum</span>
+        <span style="${S.value}">${booking.date}</span>
+        <span style="${S.label}">Původní čas</span>
+        <span style="${S.value}">${booking.time}</span>
+        <hr style="${S.hr}">
+        <a href="${APP_URL}/client" style="${S.btn}">Najít jiného tatéra</a>
+      `),
+    })
+  }
+
+  if (cancelledBy === 'client' && artist.email) {
+    return resend.emails.send({
+      from: FROM,
+      to: artist.email,
+      subject: `Klient zrušil rezervaci — InkMatch`,
+      html: base(`
+        <h2 style="${S.h2}">Rezervace zrušena klientem</h2>
+        <p style="${S.p}">Klient <strong style="${S.gold}">${client.name}</strong> zrušil rezervaci.</p>
+        <hr style="${S.hr}">
+        <span style="${S.label}">Klient</span>
+        <span style="${S.value}">${client.name}</span>
+        <span style="${S.label}">Datum</span>
+        <span style="${S.value}">${booking.date}</span>
+        <span style="${S.label}">Čas</span>
+        <span style="${S.value}">${booking.time}</span>
+        <hr style="${S.hr}">
+        <a href="${APP_URL}/artist" style="${S.btn}">Spravovat rezervace</a>
+      `),
+    })
+  }
+
+  return null
+}
+
 export async function sendWelcomeClient(user: { name: string; email: string }) {
   return resend.emails.send({
     from: FROM,

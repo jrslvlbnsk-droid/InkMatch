@@ -24,18 +24,27 @@ const STATUS_COLOR: Record<string, string> = {
   pending: 'text-yellow-400/80',
   confirmed: 'text-green-400/80',
   cancelled: 'text-white/30',
+  completed: 'text-blue-400/70',
+}
+
+const STATUS_TOAST: Record<string, string> = {
+  confirmed: 'Rezervace potvrzena',
+  cancelled: 'Rezervace zrušena',
+  completed: 'Rezervace dokončena',
+  pending: 'Rezervace přeobjednána',
 }
 
 const today = new Date().toISOString().split('T')[0]
 
 function isDone(b: any) {
-  return b.status === 'cancelled' || (b.status === 'confirmed' && b.date < today)
+  return b.status === 'cancelled' || b.status === 'completed' || (b.status === 'confirmed' && b.date < today)
 }
 
 // ─── BookingCard ─────────────────────────────────────────────────────────────
 
 function BookingCard({ b, onUpdate }: { b: any; onUpdate: (id: string, status: string) => void }) {
   const [expanded, setExpanded] = useState(false)
+  const isActive = b.status === 'confirmed' && b.date >= today
 
   return (
     <div className="card overflow-hidden">
@@ -48,20 +57,48 @@ function BookingCard({ b, onUpdate }: { b: any; onUpdate: (id: string, status: s
           <p className="text-white/40 text-xs">{b.date}{b.time && ` · ${b.time}`}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {b.status === 'pending' && (
-            <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {b.status === 'pending' && (
+              <>
+                <button
+                  onClick={() => onUpdate(b.id, 'confirmed')}
+                  className="w-8 h-8 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25 transition-colors flex items-center justify-center text-sm"
+                  title="Přijmout"
+                >✓</button>
+                <button
+                  onClick={() => onUpdate(b.id, 'cancelled')}
+                  className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-colors flex items-center justify-center text-sm"
+                  title="Zrušit"
+                >✕</button>
+              </>
+            )}
+            {isActive && (
+              <>
+                <button
+                  onClick={() => onUpdate(b.id, 'cancelled')}
+                  className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-colors flex items-center justify-center text-sm"
+                  title="Zrušit"
+                >✕</button>
+                <button
+                  onClick={() => onUpdate(b.id, 'completed')}
+                  className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 text-blue-400 hover:bg-blue-500/25 transition-colors flex items-center justify-center text-sm"
+                  title="Dokončit"
+                >✓</button>
+                <button
+                  onClick={() => onUpdate(b.id, 'pending')}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 transition-colors flex items-center justify-center text-sm"
+                  title="Přeobjednat"
+                >🔄</button>
+              </>
+            )}
+            {(b.status === 'completed' || b.status === 'cancelled') && (
               <button
-                onClick={() => onUpdate(b.id, 'confirmed')}
-                className="w-8 h-8 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25 transition-colors flex items-center justify-center text-sm"
-                title="Potvrdit"
-              >✓</button>
-              <button
-                onClick={() => onUpdate(b.id, 'cancelled')}
-                className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-colors flex items-center justify-center text-sm"
-                title="Zrušit"
-              >✕</button>
-            </div>
-          )}
+                onClick={() => onUpdate(b.id, 'pending')}
+                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 transition-colors flex items-center justify-center text-sm"
+                title="Přeobjednat"
+              >🔄</button>
+            )}
+          </div>
           <span className="text-white/20 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
@@ -209,7 +246,7 @@ export default function BookingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
     await supabase.from('bookings').update({ status }).eq('id', id)
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)))
-    toast.success(status === 'confirmed' ? 'Rezervace potvrzena' : 'Rezervace zrušena')
+    toast.success(STATUS_TOAST[status] ?? 'Aktualizováno')
   }
 
   if (loading) {
@@ -218,7 +255,8 @@ export default function BookingsTab({ userId }: { userId: string }) {
 
   const pending = bookings.filter((b) => b.status === 'pending')
   const active = bookings.filter((b) => b.status === 'confirmed' && b.date >= today)
-  const done = bookings.filter((b) => isDone(b))
+  const completed = bookings.filter((b) => b.status === 'completed')
+  const cancelled = bookings.filter((b) => b.status === 'cancelled')
 
   return (
     <div>
@@ -339,7 +377,8 @@ export default function BookingsTab({ userId }: { userId: string }) {
       {/* ── Sekce rezervací ──────────────────────────────────────────────── */}
       <BookingSection title="Nové rezervace" items={pending} defaultOpen={true} accent="text-yellow-400/80" onUpdate={updateStatus} />
       <BookingSection title="Aktivní" items={active} defaultOpen={true} accent="text-green-400/70" onUpdate={updateStatus} />
-      <BookingSection title="Dokončené" items={done} defaultOpen={false} accent="text-white/35" onUpdate={updateStatus} />
+      <BookingSection title="Dokončené" items={completed} defaultOpen={false} accent="text-blue-400/70" onUpdate={updateStatus} />
+      <BookingSection title="Zrušené" items={cancelled} defaultOpen={false} accent="text-white/35" onUpdate={updateStatus} />
     </div>
   )
 }

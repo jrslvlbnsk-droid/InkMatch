@@ -189,11 +189,14 @@ export default function BookingPage({ params }: { params: { artistId: string } }
 
   return (
     <div className="min-h-screen">
-      <nav className="flex items-center gap-3 sm:gap-4 px-4 sm:px-8 py-4 border-b border-white/5">
-        <button onClick={() => router.back()} className="btn-outline text-xs px-3 py-2 sm:px-4">← Zpět</button>
-        <div className={`${cormorant.className} text-xl font-semibold`}>
-          Ink<span className="text-gold">Match</span>
+      <nav className="flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-8 py-4 border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="btn-outline text-xs px-3 py-2 sm:px-4">← Zpět</button>
+          <div className={`${cormorant.className} text-xl font-semibold`}>
+            Ink<span className="text-gold">Match</span>
+          </div>
         </div>
+        <a href="/artist" className="btn-outline text-xs px-3 py-2 sm:px-4">Můj profil</a>
       </nav>
 
       <main className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-10">

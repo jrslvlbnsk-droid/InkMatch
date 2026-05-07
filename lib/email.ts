@@ -115,6 +115,52 @@ export async function sendBookingNotification(
   })
 }
 
+export async function sendRescheduleNotification(
+  booking: BookingPayload,
+  artist: ArtistPayload,
+  client: ClientPayload,
+) {
+  const artistName = artist.nickname || artist.name
+  await Promise.all([
+    // Klientovi: návrh nového termínu
+    client.email
+      ? resend.emails.send({
+          from: FROM,
+          to: client.email,
+          subject: `Tatér navrhuje nový termín — InkMatch`,
+          html: base(`
+            <h2 style="${S.h2}">Návrh nového termínu</h2>
+            <p style="${S.p}">Ahoj <strong style="${S.gold}">${client.name}</strong>, tatér <strong style="${S.gold}">${artistName}</strong> navrhuje přeobjednání na nový termín.</p>
+            <hr style="${S.hr}">
+            <span style="${S.label}">Tatér</span>
+            <span style="${S.value}">${artistName}${artist.city ? ` · ${artist.city}` : ''}</span>
+            <span style="${S.label}">Navrhovaný datum</span>
+            <span style="${S.value}">${booking.date}</span>
+            <span style="${S.label}">Navrhovaný čas</span>
+            <span style="${S.value}">${booking.time}</span>
+            <hr style="${S.hr}">
+            <p style="${S.p}">Přihlaste se do aplikace pro potvrzení nebo odmítnutí termínu.</p>
+            <a href="${APP_URL}/client" style="${S.btn}">Přejít do aplikace</a>
+          `),
+        })
+      : Promise.resolve(null),
+    // Tatérovi: potvrzení odeslání
+    artist.email
+      ? resend.emails.send({
+          from: FROM,
+          to: artist.email,
+          subject: `Návrh přetermínování odeslán — InkMatch`,
+          html: base(`
+            <h2 style="${S.h2}">Návrh odeslán</h2>
+            <p style="${S.p}">Klientovi <strong style="${S.gold}">${client.name}</strong> byl odeslán návrh přetermínování na <strong>${booking.date}</strong> v <strong>${booking.time}</strong>.</p>
+            <hr style="${S.hr}">
+            <a href="${APP_URL}/artist" style="${S.btn}">Spravovat rezervace</a>
+          `),
+        })
+      : Promise.resolve(null),
+  ])
+}
+
 export async function sendWelcomeClient(user: { name: string; email: string }) {
   return resend.emails.send({
     from: FROM,

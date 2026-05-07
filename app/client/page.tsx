@@ -58,15 +58,20 @@ export default function ClientPage() {
         <div className={`${cormorant.className} text-xl font-semibold`}>
           Ink<span className="text-gold">Match</span>
         </div>
-        <button
-          onClick={async () => {
-            await createClient().auth.signOut()
-            router.push('/')
-          }}
-          className="btn-outline text-xs px-3 py-2 sm:px-4"
-        >
-          Odhlásit
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/artist" className="btn-outline text-xs px-3 py-2 sm:px-4">
+            ← Můj profil
+          </Link>
+          <button
+            onClick={async () => {
+              await createClient().auth.signOut()
+              router.push('/')
+            }}
+            className="btn-outline text-xs px-3 py-2 sm:px-4"
+          >
+            Odhlásit
+          </button>
+        </div>
       </nav>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">

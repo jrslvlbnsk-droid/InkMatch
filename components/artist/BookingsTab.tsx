@@ -46,7 +46,6 @@ function BookingCard({ b, onUpdate }: { b: any; onUpdate: (id: string, status: s
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm mb-0.5">{b.client?.name ?? 'Klient'}</p>
           <p className="text-white/40 text-xs">{b.date}{b.time && ` · ${b.time}`}</p>
-          {b.client?.email && <p className="text-white/30 text-xs mt-0.5">{b.client.email}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {b.status === 'pending' && (
@@ -73,10 +72,6 @@ function BookingCard({ b, onUpdate }: { b: any; onUpdate: (id: string, status: s
             <div>
               <span className="block text-[10px] uppercase tracking-widest text-white/30 mb-0.5">Klient</span>
               <span className="text-white/80">{b.client?.name ?? '—'}</span>
-            </div>
-            <div>
-              <span className="block text-[10px] uppercase tracking-widest text-white/30 mb-0.5">Email</span>
-              <span className="text-white/80 break-all">{b.client?.email ?? '—'}</span>
             </div>
             <div>
               <span className="block text-[10px] uppercase tracking-widest text-white/30 mb-0.5">Datum</span>
@@ -151,7 +146,7 @@ export default function BookingsTab({ userId }: { userId: string }) {
 
     supabase
       .from('bookings')
-      .select('*, client:profiles!bookings_client_id_fkey(name, email)')
+      .select('*, client:profiles!bookings_client_id_fkey(name)')
       .eq('artist_id', userId)
       .order('date', { ascending: true })
       .then(({ data, error }) => {

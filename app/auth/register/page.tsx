@@ -10,6 +10,7 @@ function RegisterForm() {
   const params = useSearchParams()
   const [role, setRole] = useState<'client' | 'artist'>('client')
   const [form, setForm] = useState({ name: '', email: '', password: '', city: '' })
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -115,10 +116,38 @@ function RegisterForm() {
                 required
               />
             </div>
+            <label className="flex items-start gap-3 cursor-pointer group mt-2">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 shrink-0 w-4 h-4 rounded border border-white/20 bg-surface2 checked:bg-gold checked:border-gold accent-gold cursor-pointer"
+                required
+              />
+              <span className="text-xs text-white/50 leading-relaxed group-hover:text-white/70 transition-colors">
+                Souhlasím s{' '}
+                <Link
+                  href="/podminky"
+                  target="_blank"
+                  className="text-gold/70 hover:text-gold underline underline-offset-2 transition-colors"
+                >
+                  obchodními podmínkami
+                </Link>
+                {' '}a{' '}
+                <Link
+                  href="/gdpr"
+                  target="_blank"
+                  className="text-gold/70 hover:text-gold underline underline-offset-2 transition-colors"
+                >
+                  zásadami ochrany osobních údajů
+                </Link>
+                {' '}InkMatch.cz
+              </span>
+            </label>
             <button
               type="submit"
-              disabled={loading}
-              className="btn-gold w-full py-3 mt-2"
+              disabled={loading || !termsAccepted}
+              className="btn-gold w-full py-3 mt-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Registruji...' : 'Zaregistrovat se'}
             </button>

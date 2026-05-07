@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString()
 
     const { error } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         terms_accepted_at: now,
         gdpr_accepted_at: now,

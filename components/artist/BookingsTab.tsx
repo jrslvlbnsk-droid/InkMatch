@@ -183,7 +183,7 @@ function RescheduleModal({
             disabled={!selectedDate || !selectedTime}
             className="btn-gold flex-1 text-sm py-2 disabled:opacity-40"
           >
-            Navrhnout termín
+            Navrhnout klientovi
           </button>
         </div>
       </div>
@@ -418,13 +418,13 @@ export default function BookingsTab({ userId }: { userId: string }) {
   }
 
   const handleReschedule = async (bookingId: string, date: string, time: string) => {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'rescheduled', date, time })
-      .eq('id', bookingId)
+    const res = await fetch('/api/reschedule', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bookingId, newDate: date, newTime: time, proposedBy: 'artist' }),
+    })
 
-    if (error) {
+    if (!res.ok) {
       toast.error('Chyba při přetermínování')
       return
     }
@@ -433,13 +433,6 @@ export default function BookingsTab({ userId }: { userId: string }) {
       prev.map((b) => (b.id === bookingId ? { ...b, status: 'rescheduled', date, time } : b))
     )
     setRescheduleBooking(null)
-
-    fetch('/api/notify-reschedule', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ bookingId }),
-    }).catch((err) => console.error('[Reschedule] notify error:', err))
-
     toast.success(STATUS_TOAST.rescheduled)
   }
 

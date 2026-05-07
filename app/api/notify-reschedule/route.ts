@@ -38,10 +38,13 @@ export async function POST(request: NextRequest) {
 
     console.log('[NotifyReschedule] sending to client:', client.email)
 
+    const actionUrl = `https://inkmatch.cz/client/bookings?action=reschedule&bookingId=${bookingId}`
     await sendRescheduleNotification(
       { id: booking.id, date: booking.date, time: booking.time, description: booking.description },
       { name: artist?.name ?? '', nickname: artist?.nickname, city: artist?.city, email: artist?.email },
       { name: client.name ?? 'Klient', email: client.email },
+      'artist',
+      actionUrl,
     )
 
     return NextResponse.json({ ok: true })

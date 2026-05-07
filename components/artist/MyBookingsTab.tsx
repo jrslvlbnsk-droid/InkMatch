@@ -92,7 +92,7 @@ export default function MyBookingsTab({ userId }: { userId: string }) {
       .eq('client_id', userId)
       .order('date', { ascending: false })
       .then(({ data, error }) => {
-        console.log('[MyBookingsTab] fetch:', { count: data?.length, error })
+        console.log('[MyBookingsTab] fetch:', { count: data?.length, error: error?.message, details: error?.details })
         setBookings(data ?? [])
         setLoading(false)
       })

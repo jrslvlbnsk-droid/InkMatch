@@ -155,7 +155,7 @@ export default function BookingsTab({ userId }: { userId: string }) {
       .eq('artist_id', userId)
       .order('date', { ascending: true })
       .then(({ data, error }) => {
-        console.log('[BookingsTab] fetch:', { count: data?.length, error })
+        console.log('[BookingsTab] fetch:', { count: data?.length, error: error?.message, details: error?.details })
         setBookings(data ?? [])
         setLoading(false)
       })

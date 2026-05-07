@@ -5,11 +5,84 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
+// ─── Validace hesla ───────────────────────────────────────────────────────────
+
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return 'Heslo musí mít alespoň 8 znaků, obsahovat velké písmeno a číslo'
+  if (!/[A-Z]/.test(pw)) return 'Heslo musí mít alespoň 8 znaků, obsahovat velké písmeno a číslo'
+  if (!/[0-9]/.test(pw)) return 'Heslo musí mít alespoň 8 znaků, obsahovat velké písmeno a číslo'
+  return null
+}
+
+// ─── Ikonka oka ──────────────────────────────────────────────────────────────
+
+function EyeIcon({ visible }: { visible: boolean }) {
+  return visible ? (
+    // oko otevřené
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    // oko přeškrtnuté
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  )
+}
+
+// ─── Pole hesla s okem ────────────────────────────────────────────────────────
+
+function PasswordField({
+  label, value, onChange, placeholder, error,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  error?: string | null
+}) {
+  const [show, setShow] = useState(false)
+
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <div className="relative">
+        <input
+          className={`input pr-10 ${error ? 'border-red-500/60' : ''}`}
+          type={show ? 'text' : 'password'}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+        />
+        <button
+          type="button"
+          onClick={() => setShow((v) => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+          tabIndex={-1}
+          aria-label={show ? 'Skrýt heslo' : 'Zobrazit heslo'}
+        >
+          <EyeIcon visible={show} />
+        </button>
+      </div>
+      {error && (
+        <p className="text-red-400 text-xs mt-1.5 leading-snug">{error}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Formulář ─────────────────────────────────────────────────────────────────
+
 function RegisterForm() {
   const router = useRouter()
   const params = useSearchParams()
   const [role, setRole] = useState<'client' | 'artist'>('client')
-  const [form, setForm] = useState({ name: '', email: '', password: '', city: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', city: '' })
+  const [errors, setErrors] = useState({ password: '', confirm: '' })
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -18,8 +91,31 @@ function RegisterForm() {
     if (r === 'artist' || r === 'client') setRole(r)
   }, [params])
 
+  // Živá validace při psaní
+  const handlePasswordChange = (value: string) => {
+    setForm((f) => ({ ...f, password: value }))
+    const err = value ? validatePassword(value) : ''
+    const confirmErr = form.confirm && value !== form.confirm ? 'Hesla se neshodují' : ''
+    setErrors((e) => ({ ...e, password: err ?? '', confirm: confirmErr }))
+  }
+
+  const handleConfirmChange = (value: string) => {
+    setForm((f) => ({ ...f, confirm: value }))
+    const confirmErr = value && value !== form.password ? 'Hesla se neshodují' : ''
+    setErrors((e) => ({ ...e, confirm: confirmErr }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Finální validace při odeslání
+    const pwErr = validatePassword(form.password)
+    const cfErr = form.password !== form.confirm ? 'Hesla se neshodují' : null
+    if (pwErr || cfErr) {
+      setErrors({ password: pwErr ?? '', confirm: cfErr ?? '' })
+      return
+    }
+
     setLoading(true)
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
@@ -37,6 +133,8 @@ function RegisterForm() {
       router.push('/auth/check-email')
     }
   }
+
+  const formValid = !errors.password && !errors.confirm && form.password.length >= 1 && form.confirm === form.password
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -94,18 +192,23 @@ function RegisterForm() {
                 required
               />
             </div>
-            <div>
-              <label className="label">Heslo</label>
-              <input
-                className="input"
-                type="password"
-                placeholder="Alespoň 8 znaků"
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                required
-                minLength={8}
-              />
-            </div>
+
+            <PasswordField
+              label="Heslo"
+              value={form.password}
+              onChange={handlePasswordChange}
+              placeholder="Min. 8 znaků, velké písmeno, číslo"
+              error={errors.password || null}
+            />
+
+            <PasswordField
+              label="Zopakujte heslo"
+              value={form.confirm}
+              onChange={handleConfirmChange}
+              placeholder="Zadejte heslo znovu"
+              error={errors.confirm || null}
+            />
+
             <div>
               <label className="label">Město</label>
               <input
@@ -116,6 +219,7 @@ function RegisterForm() {
                 required
               />
             </div>
+
             <label className="flex items-start gap-3 cursor-pointer group mt-2">
               <input
                 type="checkbox"
@@ -144,6 +248,7 @@ function RegisterForm() {
                 {' '}InkMatch.cz
               </span>
             </label>
+
             <button
               type="submit"
               disabled={loading || !termsAccepted}
